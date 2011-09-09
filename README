@@ -5,3 +5,23 @@ The script uses the boto library to upload content to S3:
 
    boto - Python interface to Amazon Web Services - http://code.google.com/p/boto/
 
+There is also support for storing metadata and image data in CouchDB. This uses httplib
+and stores them in a document with a 'image' attachment.
+
+If configured you can also use a tinyurl service, although support for that is very limited
+at the moment. It only supports a HTTP POST to a custom script.
+
+
+--- sample ~/.screenshot/screenshot.ini config file ---
+[screenshot]
+use_clipboard = yes
+egress_fqdn = screenshot.example.net
+
+[s3]
+enabled = yes
+key = XXXXXXXXXXXXXXXXXXXX
+secret = XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+bucket = XXXXXXXXXX
+
+
+
