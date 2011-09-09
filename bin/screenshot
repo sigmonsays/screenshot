@@ -342,8 +342,13 @@ class Application(object):
 
       #pp.pprint(IMAGES)
 
+      datadir = os.path.join(self.screenshot_dir, 'generated')
+      self.log.info("Generating static content at %s" % (datadir))
+      if not os.path.exists(datadir):
+         os.makedirs(datadir)
+
       # write an index for each y, month
-      out = open(os.path.join(datadir, 'generated', 'calendar.html'), 'w+')
+      out = open(os.path.join(datadir, 'calendar.html'), 'w+')
       out.write("<h1>Image Calendar</h1>\n")
       cur_year = None
       for y, m in sorted(cal):
@@ -358,7 +363,7 @@ class Application(object):
       # Go through each year, month and write each year and month in seperate files
       for ym, images in cal.iteritems():
          y, m = ym
-         filename = os.path.join(datadir, 'generated', 'cal%04d%02d.html' % (y, m))
+         filename = os.path.join(datadir, 'cal%04d%02d.html' % (y, m))
          out = open(filename, 'w+')
 
          title = time.strftime("%B %Y", time.localtime(time.mktime((y, m, 1, 0, 0, 0, 0, 0, 0))))
@@ -407,11 +412,11 @@ class Application(object):
       # pp.pprint(calendar)
 
       # Send all the generated content to S3
-      extra_filenames = [ os.path.join(datadir, 'generated/calendar.html') ]
+      extra_filenames = [ os.path.join(datadir, 'calendar.html') ]
 
       for y, m in sorted(cal):
          basename = 'cal%04d%02d.html' % (y, m)
-         filename = os.path.join(datadir, 'generated', basename)
+         filename = os.path.join(datadir, basename)
          k = Key(self.bucket)
          k.key = basename
          self.log.info( "Loading %s at %s" %(filename,  k.key))
@@ -422,6 +427,9 @@ class Application(object):
          k.key = os.path.basename(filename)
          self.log.info( "Loading %s at %s" %(filename,  k.key))
          k.set_contents_from_file(file(filename), policy = 'public-read')
+
+      calendar_url = "http://%s/%s" %(self.egress_fqdn, 'calendar.html')
+      self.log.info("calendar URL is %s" % (calendar_url))
 
    def save_couchdb(self):
       scheme, netloc, path, query, fragment = urlparse.urlsplit(self.couchdb_uri)
