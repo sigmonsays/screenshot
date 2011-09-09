@@ -155,7 +155,7 @@ class Screenshot(object):
       if self.platform == 'Linux':
          os.system("import %s" % (filename))
       elif self.platform == 'Darwin':
-         os.system("screencapture %s" % (filename))
+         os.system("screencapture -s %s" % (filename))
       else:
          raise Exception("Unsupported platform %s" % (self.platform))
 
@@ -529,7 +529,8 @@ if __name__ == '__main__':
       #execfile(conffile)
       cfiles = config.read([conffile])
       log.info("Loaded configuration %s" % (", ".join(cfiles)))
-
+   else:
+      log.warn("No configuration loaded, using defaults")
 
    couchdb_config = None
    if config.has_section('couchdb') and boolval(config.get('couchdb', 'enabled')):
