@@ -44,9 +44,9 @@ enabled = no
 end_point = s3.amazonaws.com
 
 [tinyurl]
-
-service = custom
-service_url = http://grepped.org/r
+enabled = no
+#service = custom
+#service_url = http://example.org/r
 
 """
 
@@ -101,7 +101,7 @@ class TinyUrl(object):
       return callable(url)
 
 class Application(object):
-   def __init__(self, screenshot_dir = '/tmp/screenshots', screenshot_index = 'tmp/screenshots.index', s3_config = None, couchdb_config = None, use_clipboard = False):
+   def __init__(self, screenshot_dir = '/tmp/screenshots', screenshot_index = 'tmp/screenshots.index', s3_config = None, couchdb_config = None, tinyurl_config = None, use_clipboard = False):
       self.log = logging.getLogger(self.__class__.__name__)
       self.screenshot_dir = screenshot_dir
       self.screenshot_index = screenshot_index
@@ -111,6 +111,15 @@ class Application(object):
       self.couchdb_config = couchdb_config
       self.use_clipboard = use_clipboard
       self.egress_fqdn = egress_fqdn
+      self.tinyurl_config = tinyurl_config
+
+      if tinyurl_config == None:
+         self.tiny_class = None
+      elif tinyurl_config['service'] == 'custom':
+         self.tiny_class = TinyUrl
+      else:
+         self.log.warn("Disabling tinyurl, unknown service %s" % (tinyurl_config['service']))
+         self.tinyurl_config = None
 
    def configure_s3(self):
       if not self.s3_config:
@@ -125,7 +134,7 @@ class Application(object):
       self.couchdb_uri = self.couchdb_config['uri']
 
    def tiny_url(self, url, short_service = 'custom'):
-      tiny = TinyUrl(short_service)
+      tiny = self.tiny_class(short_service)
       short_url = tiny(url)
       return short_url
 
@@ -517,13 +526,25 @@ if __name__ == '__main__':
    else:
       log.info("s3 is disabled")
 
+   tinyurl_config = None
+   if config.has_section('tinyurl') and boolval(config.get('tinyurl', 'enabled')):
+      tinyurl_config = {}
+      tinyurl_config['service'] = config.get('tinyurl', 'service')
+      if tinyurl_config['service'] == 'custom':
+         tinyurl_config['service_url'] = config.get('tinyurl', 'service_url')
+         log.info("tinyurl is enabled")
+      else:
+         log.warn("tinyurl is disabled, unknown service %s" %(service))
+   else:
+      log.info("tinyurl is disabled")
+
    screenshot_dir = config.get('screenshot', 'directory')
    screenshot_index = config.get('screenshot', 'index_file')
    egress_fqdn = config.get('screenshot', 'egress_fqdn')
    page_size = config.getint('screenshot', 'page_size')
    use_clipboard = boolval(config.get('screenshot', 'use_clipboard'))
 
-   app = Application(screenshot_dir, screenshot_index, s3_config, couchdb_config, use_clipboard)
+   app = Application(screenshot_dir, screenshot_index, s3_config, couchdb_config, tinyurl_config, use_clipboard)
 
    app.configure_s3()
    app.configure_couchdb()
