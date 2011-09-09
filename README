@@ -1,0 +1,7 @@
+The goal of this program is to store screenshots on s3 (and others) as simple as possible
+while still presenting a HTML based browser for all the screenshots.
+
+The script uses the boto library to upload content to S3:
+
+   boto - Python interface to Amazon Web Services - http://code.google.com/p/boto/
+

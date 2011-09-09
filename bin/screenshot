@@ -1,0 +1,555 @@
+#!/usr/bin/env python
+import platform, logging,  os, sys, time, traceback, json, ConfigParser, calendar, httplib, urllib, urlparse
+from optparse import OptionParser
+from boto.s3.connection import S3Connection
+from boto.s3.key import Key
+from StringIO import StringIO
+from ConfigParser import SafeConfigParser
+
+def boolval(b):
+    """
+    return a boolean from the given string
+    return True for a value of '1', 'true' (any case), 'yes' (any acse)
+    return False for a value of '0', 'false' (any case), 'no' (any case)
+    """
+    b = str(b).lower()
+    if b in [ 'true', '1', 'yes']:
+        return True
+    elif b in [ 'false', '0', 'no']:
+        return False
+    return False
+
+
+DEFAULT_CONFIG = """
+[screenshot]
+# Override what FQDN is use (for a reverse proxy if setup)
+egress_fqdn = localhost
+index_file = %(HOME)s/.screenshots.index
+directory = /tmp/screenshots
+# How many images per page for HTML generation
+page_size = 10
+
+# use xclip to capture the URL
+use_clipboard = yes
+
+[couchdb]
+enabled = no
+#uri = "http://username.couchone.com/screenshot"
+
+[s3]
+enabled = no
+#key = XXX
+#secret = XXX
+#bucket = XXX
+end_point = s3.amazonaws.com
+
+[tinyurl]
+
+service = custom
+service_url = http://grepped.org/r
+
+"""
+
+
+def config_get(section, key):
+   try:
+      val = config.get(section, key)
+   except ConfigParser.NoOptionError:
+      val = None
+   return val
+
+
+
+
+
+
+import pprint
+pp = pprint.PrettyPrinter(indent=3)
+
+class TinyUrl(object):
+   """
+   Minimal class to abstract tiny url services
+   """
+   def __init__(self, short_service):
+      self.log = logging.getLogger(self.__class__.__name__)
+      self.short_service = short_service
+
+   def custom(self, url):
+      """
+      perform HTTP POST to a custom service
+      """
+      scheme, netloc, path, query, fragment = urlparse.urlsplit(self.short_service)
+      ss = httplib.HTTPConnection(netloc)
+      params = urllib.urlencode({'data': url})
+      headers = {"Content-type": "application/x-www-form-urlencoded", "Accept": "text/plain"}
+      ss.request("POST", path, params, headers)
+      res = None
+      try:
+         res = ss.getresponse()
+      except httplib.BadStatusLine, e:
+         print "ERROR: httplib.BadStatusLine:", str(e)
+      if res:
+         short_url = res.read().strip()
+      else:
+         short_url = None
+
+   def __call__(self, method_name, url):
+      if not hasattr(self, method_name):
+         return None
+
+      callable = getattr(self, method_name)
+      return callable(url)
+
+class Application(object):
+   def __init__(self, screenshot_dir = '/tmp/screenshots', screenshot_index = 'tmp/screenshots.index', s3_config = None, couchdb_config = None, use_clipboard = False):
+      self.log = logging.getLogger(self.__class__.__name__)
+      self.screenshot_dir = screenshot_dir
+      self.screenshot_index = screenshot_index
+      self.conn = None
+      self.bucket = None
+      self.s3_config = s3_config
+      self.couchdb_config = couchdb_config
+      self.use_clipboard = use_clipboard
+      self.egress_fqdn = egress_fqdn
+
+   def configure_s3(self):
+      if not self.s3_config:
+         return
+      c = self.s3_config
+      self.conn = S3Connection(c['key'], c['secret'])
+      self.bucket = self.conn.get_bucket(c['bucket'])
+
+   def configure_couchdb(self):
+      if not self.couchdb_config:
+         return
+      self.couchdb_uri = self.couchdb_config['uri']
+
+   def tiny_url(self, url, short_service = 'custom'):
+      tiny = TinyUrl(short_service)
+      short_url = tiny(url)
+      return short_url
+
+   def take_screenshot(self):
+      ts = time.strftime("%F-%T").replace(":", "-")
+      if len(sys.argv) > 1:
+         shortname = sys.argv[1]
+      else:
+         shortname = "screenshot"
+      basename = "%s-%s.jpg" % ( shortname, ts )
+      filename = os.path.join(self.screenshot_dir, basename)
+
+      dir = os.path.dirname(filename)
+      if not os.path.exists(dir): os.makedirs(dir)
+
+      if platform.system() == 'Linux':
+         os.system("import %s" % (filename))
+      elif platform.system() == 'Darwin':
+         os.system("screencapture %s" % (filename))
+      else:
+         raise Exception("Unsupported platform %s" % (platform.system()))
+
+      short_url = None
+
+      if self.s3_config:
+         s3_key = os.path.join(ts.replace(":", "/").replace("-", "/"), shortname) + ".jpg"
+         s3_url = "http://%s.%s/%s" % (self.s3_config['bucket'], self.s3_config['end_point'], s3_key )
+         self.log.info("s3 url %s" %(s3_url))
+         egress_url = s3_url
+         egress_url = "http://%s/%s" %(self.egress_fqdn, s3_key)
+         k = Key(self.bucket)
+         k.key = s3_key
+         k.set_contents_from_filename(filename, policy = 'public-read')
+         #URLS.append(egress_url)
+
+      # Use xclip to copy that shit to the clipboard
+      if self.use_clipboard:
+         r = os.popen('xclip -i', 'w')
+         if short_url:
+            r.write(short_url)
+         else:
+            r.write(egress_url)
+         r.close()
+         self.log.info("xclip url %s" %(egress_url))
+      else:
+         self.log.info("xclip disabled")
+
+      # add metadata record and image to couchdb if configured
+      if self.couchdb_config:
+         self.save_couchdb()
+      
+      # trash original
+      os.unlink(filename)
+
+      # write index file
+      # XXX: I forget what this was actually used for...
+      if self.use_local_index:
+         index = "%s %s %s\n" % ( s3_key, filename, egress_url )
+         fh = open(self.screenshot_index, "a+")
+         fh.write(index)
+         fh.close()
+
+         # How many lines are in the index?
+         count = 0
+         for line in file(self.screenshot_index):
+            count = count + 1
+
+         if count > self.page_size:
+            items = []
+            for line in file(self.screenshot_index):
+               s3_key, filename, uri = line.split()
+               item = {}
+               item['key'] = s3_key
+               item['filename'] = filename
+               item['uri'] = uri
+               items.append(item)
+
+            # Save it in S3 and update latest.json
+            latest_obj = self.bucket.get_key('latest.json')
+            if latest_obj == None:
+               latest = {}
+               latest['page_count'] = 1
+            else:
+               latest = json.loads(latest_obj.get_contents_as_string())
+               latest['page_count'] = latest['page_count'] + 1
+
+            self.log.info("Updating latest.json")
+            k = Key(self.bucket)
+            k.key = "latest.json"
+            k.set_contents_from_string(json.dumps(latest), policy = 'public-read')
+
+            s3_key = "screenshot-%d.json" % ( latest['page_count'] )
+            self.log.info("Updating %s" % ( s3_key ))
+            k = Key(self.bucket)
+            k.key = s3_key
+            k.set_contents_from_string(json.dumps(items), policy = 'public-read')
+
+            # truncate the index file
+            open(self.screenshot_index, "w+").close()
+
+   def sync_static(self):
+      for dirpath, dirnames, filenames in os.walk("static/"):
+         for filename in filenames:
+            if filename.startswith('.'): continue
+            path = os.path.join(dirpath, filename)
+            s3_key = "static/" + filename
+            self.log.info("SYNC %s" % (s3_key))
+            k = Key(self.bucket)
+            k.key = s3_key
+            k.set_contents_from_filename(path, policy = 'public-read')
+
+      # save the index file
+      path = "static/index.html"
+      s3_key = "screenshots.html"
+      self.log.info("SYNC %s" %(s3_key))
+      k = Key(self.bucket)
+      k.key = s3_key
+      k.set_contents_from_filename(path, policy = 'public-read')
+
+
+
+   def rebuild_index(self):
+      latest_obj = self.bucket.get_key('latest.json')
+      if latest_obj:
+         latest = json.loads(latest_obj.get_contents_as_string())
+         self.bucket.delete_key('latest.json')
+
+         for n in xrange(latest['page_count']):
+            k = "screenshot-%d.json" % ( n )
+            self.bucket.delete_key(k)
+      else:
+         latest = None
+
+      
+
+      # Iterate all s3 keys and build indexes for each
+      latest = {}
+      latest['page_count'] = 0
+
+      queue = []
+      for obj in self.bucket:
+
+         if obj.name.endswith('.jpg'):
+            item = {}
+            item['uri'] = obj.name
+            queue.append(item)
+
+         if len(queue) > self.page_size:
+            latest['page_count'] = latest['page_count'] + 1
+            s3_key = "screenshot-%d.json" % ( latest['page_count'] )
+            self.log.info("Updating %s" % ( s3_key ))
+            k = Key(self.bucket)
+            k.key = s3_key
+            k.set_contents_from_string(json.dumps(queue), policy = 'public-read')
+            queue = []
+
+      # Update latest
+      self.log.info("Updating latest.json")
+      k = Key(self.bucket)
+      k.key = "latest.json"
+      k.set_contents_from_string(json.dumps(latest), policy = 'public-read')
+
+   def _iter_s3_images(self):
+      queue = []
+      for obj in self.bucket:
+         if obj.name.endswith('.jpg'):
+            yield obj
+
+   def update_calendar(self):
+      #organize by year, month tuple
+      cal = {}
+      IMAGES = {}
+      prefix = time.strftime('%Y/%m')
+      for obj in self.bucket.get_all_keys( prefix = prefix ):
+         tmp = obj.name.split("/", 6)
+         tmp.pop()
+         tmp = map(int, tmp)
+         y, m, d, h, i, s = tmp
+         k = (y, m) 
+         if not k in cal:
+            cal[ k ] = []
+         #print (y, m, d, h, i, s, obj.name)
+         cal[k].append(obj.name)
+         IMAGES[obj.name] = obj
+         #break
+
+      #pp.pprint(IMAGES)
+
+   def update_full_calendar(self):
+      #organize by year, month tuple
+      cal = {}
+      IMAGES = {}
+      for obj in self._iter_s3_images():
+         tmp = obj.name.split("/", 6)
+         tmp.pop()
+         tmp = map(int, tmp)
+         y, m, d, h, i, s = tmp
+         k = (y, m) 
+         if not k in cal:
+            cal[ k ] = []
+         #print (y, m, d, h, i, s, obj.name)
+         cal[k].append(obj.name)
+         IMAGES[obj.name] = obj
+         #break
+
+      #pp.pprint(IMAGES)
+
+      # write an index for each y, month
+      out = open(os.path.join(datadir, 'generated', 'calendar.html'), 'w+')
+      out.write("<h1>Image Calendar</h1>\n")
+      cur_year = None
+      for y, m in sorted(cal):
+         cnt = len(cal[y,m])
+         title = time.strftime("%B %Y", time.localtime(time.mktime((y, m, 1, 0, 0, 0, 0, 0, 0))))
+         if cur_year != y:
+            out.write("<h2>%s</h2>" % (y))
+            cur_year = y
+         out.write("<li><a href='cal%04d%02d.html'>%s</a> - %d images</li>" % (y, m, title, cnt))
+      out.close()
+
+      # Go through each year, month and write each year and month in seperate files
+      for ym, images in cal.iteritems():
+         y, m = ym
+         filename = os.path.join(datadir, 'generated', 'cal%04d%02d.html' % (y, m))
+         out = open(filename, 'w+')
+
+         title = time.strftime("%B %Y", time.localtime(time.mktime((y, m, 1, 0, 0, 0, 0, 0, 0))))
+
+         self.log.info("Write %s" %(filename))
+         self.log.info("%d images" % (len(images)))
+         out.write("<h1>%s</h1>" % (title))
+         out.write("<a href='calendar.html'>Months</a><br>")
+         out.write("<table width='100%' border=1>\n")
+
+         # Organize images by day
+         day_images = {}
+         for obj_name in images:
+            _, _, d, _ = obj_name.split("/", 3)
+            d = int(d)
+            if not d in day_images:
+               day_images[d] = []
+            day_images[d].append(obj_name)
+
+         weeks = calendar.monthcalendar(y, m)
+         for week in weeks:
+            out.write("<tr>")
+            for day in week:
+               if day == 0:
+                  out.write("<td>&nbsp</td>")
+                  continue
+
+               out.write("<td valign=top><b>%s</b> &nbsp; " % (day))
+               cnt = len(day_images.get(day, []))
+               if cnt > 0:
+                  out.write("%d images" % (cnt))
+               out.write("<br>")
+
+               for img in day_images.get(day, []):
+                  url = "http://%s/%s" % (self.egress_fqdn, img)
+                  title, ext = os.path.splitext(os.path.basename(img))
+                  out.write("<a href='%s'>%s</a><br>" % (url, title))
+
+               out.write("</td>")
+
+            out.write("</tr>\n")
+         out.write("</table>\n")
+         out.close()
+      
+
+      # pp.pprint(calendar)
+
+      # Send all the generated content to S3
+      extra_filenames = [ os.path.join(datadir, 'generated/calendar.html') ]
+
+      for y, m in sorted(cal):
+         basename = 'cal%04d%02d.html' % (y, m)
+         filename = os.path.join(datadir, 'generated', basename)
+         k = Key(self.bucket)
+         k.key = basename
+         self.log.info( "Loading %s at %s" %(filename,  k.key))
+         k.set_contents_from_file(file(filename), policy = 'public-read')
+
+      for filename in extra_filenames:
+         k = Key(self.bucket)
+         k.key = os.path.basename(filename)
+         self.log.info( "Loading %s at %s" %(filename,  k.key))
+         k.set_contents_from_file(file(filename), policy = 'public-read')
+
+   def save_couchdb(self):
+      scheme, netloc, path, query, fragment = urlparse.urlsplit(self.couchdb_uri)
+
+      # save meta data
+      rec = {
+         "year" : int(time.strftime("%Y")),
+         "month" : int(time.strftime("%m")),
+         "day" : int(time.strftime("%d")),
+         "doctype" : "metadata",
+         "s3_url" : s3_url,
+         "s3_key" : s3_key,
+      }
+      headers = {
+         "Content-Type" : "application/json",
+      }
+      couch_key = s3_key.replace("/", "-")
+      ss = httplib.HTTPConnection(netloc)
+      ss.request("PUT", os.path.join(path, couch_key), json.dumps(rec), headers)
+      res = None
+      try:
+         res = ss.getresponse()
+      except httplib.BadStatusLine, e:
+         self.log.error("ERROR: httplib.BadStatusLine: %s" %(e))
+
+      if res:
+         try:
+            ret = json.loads(res.read())
+         except:
+            traceback.print_exc()
+            ret = None
+
+      if ret:
+         print res.status, res.reason, ret
+
+         # Upload the image as an attachment 
+         aurl = os.path.join(path, ret['id'], "image")
+         aurl_params = "?rev=" + ret['rev']
+         ss.request("PUT", aurl + aurl_params, file(filename).read(), { "Content-Type" : "image/jpg" })
+         res = ss.getresponse()
+         print res.status, res.reason, res.read()
+         attach_url = scheme + "://" + netloc + os.path.join(path , ret['id'], "image")
+         self.log.info("couchdb url %s" %(attach_url))
+      else:
+         self.log.error("problem with couchdb")
+
+
+if __name__ == '__main__':
+
+   parser = OptionParser()
+   parser.add_option("-c", "--config", dest="config", help="config file", metavar="FILE", default=None)
+   parser.add_option("-v", "--verbose", dest="verbose", action="store_true", default=False)
+   parser.add_option("", "--sync", dest="sync", action="store_true", default=False)
+   parser.add_option("", "--rebuild-index", dest="rebuild_index", action="store_true", default=False)
+   parser.add_option("", "--update-full-calendar", dest="update_full_calendar", action="store_true", default=False)
+   parser.add_option("", "--update-calendar", dest="update_calendar", action="store_true", default=False)
+   parser.add_option("-l", "--log-level", dest="log_level", default='info', help="set logging level [%default]")
+   parser = parser
+
+   (options, args) = parser.parse_args()
+
+   log = logging.getLogger()
+   stderr_handler = logging.StreamHandler()
+   formatter = logging.Formatter("[%(process)d] %(name)s %(levelname)s %(message)s")
+   stderr_handler.setFormatter(formatter)
+   log.addHandler(stderr_handler)
+   log.setLevel(getattr(logging, options.log_level.upper()))
+
+   # Load config
+   config = SafeConfigParser()
+   config.add_section('screenshot')
+   config.set('screenshot', 'HOME', os.environ['HOME'])
+   # Load default config
+   config.readfp(StringIO(DEFAULT_CONFIG))
+   # If command line given
+   if options.config:
+      cfiles = config.read( [ options.config ] )
+   # load user config from $HOME/.screenshot/screenshot.conf
+   conffile = os.path.join(os.environ['HOME'], ".screenshot/screenshot.ini")
+   if os.path.exists(conffile):
+      #execfile(conffile)
+      cfiles = config.read([conffile])
+      log.info("Loaded configuration %s" % (", ".join(cfiles)))
+
+
+   couchdb_config = None
+   if config.has_section('couchdb') and boolval(config.get('couchdb', 'enabled')):
+      couchdb_config = {}
+      couchdb_config['uri'] = config.get('couchdb', 'uri')
+      log.info("couchdb is disabled")
+   else:
+      log.info("couchdb is disabled")
+
+   s3_config = None
+   if config.has_section('s3') and boolval(config.get('s3', 'enabled')):
+      s3_config = {}
+      s3_config['key'] = config.get('s3', 'key')
+      s3_config['secret'] = config.get('s3', 'secret')
+      s3_config['bucket'] = config.get('s3', 'bucket')
+      s3_config['end_point'] = config.get('s3', 'end_point')
+      log.info("s3 is enabled")
+   else:
+      log.info("s3 is disabled")
+
+   screenshot_dir = config.get('screenshot', 'directory')
+   screenshot_index = config.get('screenshot', 'index_file')
+   egress_fqdn = config.get('screenshot', 'egress_fqdn')
+   page_size = config.getint('screenshot', 'page_size')
+   use_clipboard = boolval(config.get('screenshot', 'use_clipboard'))
+
+   app = Application(screenshot_dir, screenshot_index, s3_config, couchdb_config, use_clipboard)
+
+   app.configure_s3()
+   app.configure_couchdb()
+
+   app.use_local_index = False
+   app.egress_fqdn = egress_fqdn
+   app.page_size = page_size
+
+   if options.sync:
+      print "Syncing static..."
+      app.sync_static()
+      sys.exit(0)
+
+   if options.rebuild_index:
+      print "Rebuilding indexes.."
+      app.rebuild_index()
+      sys.exit(0)
+
+   if options.update_full_calendar:
+      print "Updating image calendar.."
+      app.update_full_calendar()
+      sys.exit(0)
+
+   if options.update_calendar:
+      print "Updating image calendar.."
+      app.update_calendar()
+      sys.exit(0)
+
+   app.take_screenshot()

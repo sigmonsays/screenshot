@@ -1,0 +1,73 @@
+<html>
+   <head>
+      <title>Screenshots</title>
+      <link rel="stylesheet" href="/static/style.css" type="text/css" media="screen,print">
+      <script type="text/javascript" src="/static/prototype.js"></script>
+   </head>
+   <body>
+
+   <h1 id='heading'>## Screenshots</h1>
+   <span id='subheading'></span>
+   <div id='pagination'></div>
+   <div id='images'></div>
+
+   <script type="text/javascript">
+
+      var page_count = 0
+      function click_href(page) {
+         return function() {
+            load_page(page)
+         }
+      }
+      function update_pagination(pages) {
+         $('pagination').innerHTML = ''
+         for(var i=0; i<pages; i++) {
+            var a = document.createElement('a')
+            a.innerHTML = "Page " + (i + 1)
+            a.onclick = click_href(i+1)
+            $('pagination').appendChild(a)
+         }
+      }
+      function load_page(page_num) {
+         var index_file = "screenshot-" + page_num + ".json"
+         new Ajax.Request(index_file, 
+         { 
+            method:'get',
+            onSuccess: function(transport) {
+               var response = eval('(' + transport.responseText + ')' )
+               $('heading').innerHTML = (response.length - 1) + " Screenshots"
+               $('subheading').innerHTML = "Page " + page_num + " of " + page_count
+               $('images').innerHTML = ''
+               for(var i=response.length - 1; i>0; i--) {
+                  var d = document.createElement('div')
+                  d.className = 'image'
+                  var img = document.createElement('img')
+                  img.src = response[i]['uri']
+                  d.appendChild(img)
+                  $('images').appendChild(d)
+               }
+            },
+            onFailure: function() {
+            }
+         });
+      }
+
+
+      Event.observe(window, 'load', function() {
+         new Ajax.Request('/latest.json', 
+         { 
+            method:'get',
+            onSuccess: function(transport) {
+               var response = eval('(' + transport.responseText + ')' )
+               page_count = response['page_count']
+               update_pagination(page_count)
+               load_page(page_count)
+            },
+            onFailure: function() {
+            }
+         });
+      });
+   </script>
+
+   </body>
+</html>
