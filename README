@@ -1,9 +1,14 @@
 The goal of this program is to store screenshots on s3 (and others) as simple as possible
 while still presenting a HTML based browser for all the screenshots.
 
-The script uses the boto library to upload content to S3:
+Features
+- supported on linux and Mac OSX
+- capture screenshots
+- send screenshot images to s3 or couchdb database
+- copy url to clipboard
+- integrate with a tinyurl services
 
-   boto - Python interface to Amazon Web Services - http://code.google.com/p/boto/
+The script uses the boto library to upload content to S3 at http://code.google.com/p/boto/
 
 There is also support for storing metadata and image data in CouchDB. This uses httplib
 and stores them in a document with a 'image' attachment.
@@ -22,6 +27,9 @@ enabled = yes
 key = XXXXXXXXXXXXXXXXXXXX
 secret = XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
 bucket = XXXXXXXXXX
+
+---- end configuration sample -------------------------
+
 
 
 
