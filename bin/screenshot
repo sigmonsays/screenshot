@@ -50,22 +50,6 @@ enabled = no
 
 """
 
-
-def config_get(section, key):
-   try:
-      val = config.get(section, key)
-   except ConfigParser.NoOptionError:
-      val = None
-   return val
-
-
-
-
-
-
-import pprint
-pp = pprint.PrettyPrinter(indent=3)
-
 class TinyUrl(object):
    """
    Minimal class to abstract tiny url services
@@ -73,11 +57,13 @@ class TinyUrl(object):
    def __init__(self, short_service):
       self.log = logging.getLogger(self.__class__.__name__)
       self.short_service = short_service
+      self.log.info("TinyURL service is at %s" % (short_service))
 
    def custom(self, url):
       """
       perform HTTP POST to a custom service
       """
+      self.log.info("Creating short url for %s" % (url))
       scheme, netloc, path, query, fragment = urlparse.urlsplit(self.short_service)
       ss = httplib.HTTPConnection(netloc)
       params = urllib.urlencode({'data': url})
@@ -92,6 +78,7 @@ class TinyUrl(object):
          short_url = res.read().strip()
       else:
          short_url = None
+      return short_url
 
    def __call__(self, method_name, url):
       if not hasattr(self, method_name):
@@ -135,9 +122,11 @@ class Screenshot(object):
          return
       self.couchdb_uri = self.couchdb_config['uri']
 
-   def tiny_url(self, url, short_service = 'custom'):
-      tiny = self.tiny_class(short_service)
-      short_url = tiny(url)
+   def tiny_url(self, url):
+      service = self.tinyurl_config['service']
+      service_url = self.tinyurl_config['service_url']
+      tinysvc = self.tiny_class(service_url)
+      short_url = tinysvc(service, url)
       return short_url
 
    def take_screenshot(self):
@@ -159,7 +148,7 @@ class Screenshot(object):
       else:
          raise Exception("Unsupported platform %s" % (self.platform))
 
-      short_url = None
+      URLS = []
 
       if self.s3_config:
          s3_key = os.path.join(ts.replace(":", "/").replace("-", "/"), shortname) + ".jpg"
@@ -170,36 +159,52 @@ class Screenshot(object):
          k = Key(self.bucket)
          k.key = s3_key
          k.set_contents_from_filename(filename, policy = 'public-read')
-         #URLS.append(egress_url)
+         URLS.append(egress_url)
+      else:
+         s3_key = None
+         s3_url = None
+
+      # add metadata record and image to couchdb if configured
+      if self.couchdb_config:
+         url = self.save_couchdb(ts, filename, shortname, s3_url, s3_key)
+         if url:
+            URLS.append(url)
+
+      # get clipboard URL
+      clipboard_url = None
+      if len(URLS) > 0:
+         clipboard_url = URLS[0]
+         self.log.info("Clipboard URL %s" %(clipboard_url))
+
+      # Perform any tiny url translations, just the first url
+      short_url = None
+      if self.tinyurl_config:
+         short_url = self.tiny_url(clipboard_url)
+         if short_url:
+            self.log.info("Clipboard URL shortened to %s" % (short_url))
+            clipboard_url = short_url
 
       # Use xclip to copy that shit to the clipboard
       if self.use_clipboard:
-         if self.platform == 'Linux':
+         if clipboard_url and self.platform == 'Linux':
             r = os.popen('xclip -i', 'w')
             if short_url:
-               r.write(short_url)
-            else:
-               r.write(egress_url)
+               r.write(clipboard_url)
             r.close()
             self.log.info("xclip url %s" %(egress_url))
 
-         elif self.platform == 'Darwin':
+         elif clipboard_url and self.platform == 'Darwin':
             r = os.popen('pbcopy', 'w')
             if short_url:
-               r.write(short_url)
-            else:
-               r.write(egress_url)
+               r.write(clipboard_url)
             r.close()
             self.log.info("pbcopy url %s" %(egress_url))
 
          else:
-            self.log.warn("clipboard not supported")
+            self.log.warn("clipboard not supported or no short url")
       else:
          self.log.info("clipboard disabled")
 
-      # add metadata record and image to couchdb if configured
-      if self.couchdb_config:
-         self.save_couchdb()
       
       # trash original
       os.unlink(filename)
@@ -446,8 +451,10 @@ class Screenshot(object):
       calendar_url = "http://%s/%s" %(self.egress_fqdn, 'calendar.html')
       self.log.info("calendar URL is %s" % (calendar_url))
 
-   def save_couchdb(self):
+   def save_couchdb(self, ts, filename, shortname, s3_url = None, s3_key = None):
       scheme, netloc, path, query, fragment = urlparse.urlsplit(self.couchdb_uri)
+      couch_key = os.path.join(ts.replace(":", "-").replace("-", "-"), shortname) + ".jpg"
+      self.log.info("Saving record in couchdb at %s" % (couch_key))
 
       # save meta data
       rec = {
@@ -461,7 +468,6 @@ class Screenshot(object):
       headers = {
          "Content-Type" : "application/json",
       }
-      couch_key = s3_key.replace("/", "-")
       ss = httplib.HTTPConnection(netloc)
       ss.request("PUT", os.path.join(path, couch_key), json.dumps(rec), headers)
       res = None
@@ -478,18 +484,20 @@ class Screenshot(object):
             ret = None
 
       if ret:
-         print res.status, res.reason, ret
+         self.log.info("Couchdb server said %s, %s, %s" % (res.status, res.reason, ret))
 
          # Upload the image as an attachment 
          aurl = os.path.join(path, ret['id'], "image")
          aurl_params = "?rev=" + ret['rev']
          ss.request("PUT", aurl + aurl_params, file(filename).read(), { "Content-Type" : "image/jpg" })
          res = ss.getresponse()
-         print res.status, res.reason, res.read()
+         self.log.info("Couchdb server said %s, %s %s" % (res.status, res.reason, res.read()))
          attach_url = scheme + "://" + netloc + os.path.join(path , ret['id'], "image")
          self.log.info("couchdb url %s" %(attach_url))
       else:
          self.log.error("problem with couchdb")
+         attach_url = None
+      return attach_url
 
 
 if __name__ == '__main__':
