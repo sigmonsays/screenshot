@@ -188,17 +188,19 @@ class Screenshot(object):
       if self.use_clipboard:
          if clipboard_url and self.platform == 'Linux':
             r = os.popen('xclip -i', 'w')
-            if short_url:
-               r.write(clipboard_url)
+            if clipboard_url:
+               r.write(clipboard_url + "\n")
+            r.flush()
             r.close()
-            self.log.info("xclip url %s" %(egress_url))
+            self.log.info("xclip url %s" %(clipboard_url))
 
          elif clipboard_url and self.platform == 'Darwin':
             r = os.popen('pbcopy', 'w')
-            if short_url:
-               r.write(clipboard_url)
+            if clipboard_url:
+               r.write(clipboard_url + "\n")
+            r.flush()
             r.close()
-            self.log.info("pbcopy url %s" %(egress_url))
+            self.log.info("pbcopy url %s" %(clipboard_url))
 
          else:
             self.log.warn("clipboard not supported or no short url")
