@@ -156,6 +156,7 @@ class Screenshot(object):
          self.log.info("s3 url %s" %(s3_url))
          egress_url = s3_url
          egress_url = "http://%s/%s" %(self.egress_fqdn, s3_key)
+         self.clipboard_copy(egress_url)
          k = Key(self.bucket)
          k.key = s3_key
          k.set_contents_from_filename(filename, policy = 'public-read')
@@ -168,6 +169,7 @@ class Screenshot(object):
       if self.couchdb_config:
          url = self.save_couchdb(ts, filename, shortname, s3_url, s3_key)
          if url:
+            self.clipboard_copy(url)
             URLS.append(url)
 
       # get clipboard URL
@@ -184,29 +186,7 @@ class Screenshot(object):
             self.log.info("Clipboard URL shortened to %s" % (short_url))
             clipboard_url = short_url
 
-      # Use xclip to copy that shit to the clipboard
-      if self.use_clipboard:
-         if clipboard_url and self.platform == 'Linux':
-            r = os.popen('xclip -i', 'w')
-            if clipboard_url:
-               r.write(clipboard_url + "\n")
-            r.flush()
-            r.close()
-            self.log.info("xclip url %s" %(clipboard_url))
-
-         elif clipboard_url and self.platform == 'Darwin':
-            r = os.popen('pbcopy', 'w')
-            if clipboard_url:
-               r.write(clipboard_url + "\n")
-            r.flush()
-            r.close()
-            self.log.info("pbcopy url %s" %(clipboard_url))
-
-         else:
-            self.log.warn("clipboard not supported or no short url")
-      else:
-         self.log.info("clipboard disabled")
-
+      self.clipboard_copy(clipboard_url)
       
       # trash original
       os.unlink(filename)
@@ -256,6 +236,30 @@ class Screenshot(object):
 
             # truncate the index file
             open(self.screenshot_index, "w+").close()
+
+   def clipboard_copy(self, url):
+      # Use xclip to copy that shit to the clipboard
+      if not self.use_clipboard:
+         self.log.info("clipboard disabled")
+         return
+
+      if url and self.platform == 'Linux':
+         r = os.popen('xclip -i', 'w')
+         r.write(url + "\n")
+         r.flush()
+         r.close()
+         self.log.info("xclip url %s" %(url))
+
+      elif url and self.platform == 'Darwin':
+         r = os.popen('pbcopy', 'w')
+         r.write(url + "\n")
+         r.flush()
+         r.close()
+         self.log.info("pbcopy url %s" %(url))
+
+      else:
+         self.log.warn("clipboard not supported or no short url")
+
 
    def sync_static(self):
       for dirpath, dirnames, filenames in os.walk("static/"):
