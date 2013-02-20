@@ -35,3 +35,14 @@ bucket = XXXXXXXXXX
 An image calendar can be build using static HTML when you are storing
 objects in S3. This can be done using the --update-full-calendar option.
 
+
+Software dependancies
+---------------------------------
+- boto library
+- xclip command line 
+- image magick for the import command
+
+Setup on ubuntu lucid
+
+sudo apt-get install python-boto xclip imagemagick
+
