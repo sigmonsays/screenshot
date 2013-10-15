@@ -114,7 +114,7 @@ class Screenshot(object):
       if not self.s3_config:
          return
       c = self.s3_config
-      self.conn = S3Connection(c['key'], c['secret'])
+      self.conn = S3Connection(c['key'], c['secret'], host=c['end_point'])
       self.bucket = self.conn.get_bucket(c['bucket'])
 
    def configure_couchdb(self):
