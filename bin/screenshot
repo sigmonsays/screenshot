@@ -32,6 +32,9 @@ page_size = 10
 # use xclip to capture the URL
 use_clipboard = yes
 
+# download the remote file url (clipboard url) to warm any cache
+warm_cache = yes
+
 [couchdb]
 enabled = no
 #uri = "http://username.couchone.com/screenshot"
@@ -87,25 +90,40 @@ class TinyUrl(object):
       callable = getattr(self, method_name)
       return callable(url)
 
+class ScreenshotOptions(object):
+
+   def __init__(self, 
+      screenshot_dir = '/tmp/screenshots', 
+      screenshot_index = 'tmp/screenshots.index',
+      s3_config = None,
+      couchdb_config = None,
+      tinyurl_config = None,
+      use_clipboard = False,
+      warm_cache = True,
+      egress_fqdn = None,
+   ):
+      self.__dict__.update(locals())
+
 class Screenshot(object):
-   def __init__(self, screenshot_dir = '/tmp/screenshots', screenshot_index = 'tmp/screenshots.index', s3_config = None, couchdb_config = None, tinyurl_config = None, use_clipboard = False):
+   def __init__(self, opts):
       self.log = logging.getLogger(self.__class__.__name__)
-      self.screenshot_dir = screenshot_dir
-      self.screenshot_index = screenshot_index
+      self.screenshot_dir = opts.screenshot_dir
+      self.screenshot_index = opts.screenshot_index
       self.conn = None
       self.bucket = None
-      self.s3_config = s3_config
-      self.couchdb_config = couchdb_config
-      self.use_clipboard = use_clipboard
-      self.egress_fqdn = egress_fqdn
-      self.tinyurl_config = tinyurl_config
+      self.s3_config = opts.s3_config
+      self.couchdb_config = opts.couchdb_config
+      self.use_clipboard = opts.use_clipboard
+      self.warm_cache = opts.warm_cache
+      self.egress_fqdn = opts.egress_fqdn
+      self.tinyurl_config = opts.tinyurl_config
 
-      if tinyurl_config == None:
+      if self.tinyurl_config == None:
          self.tiny_class = None
-      elif tinyurl_config['service'] == 'custom':
+      elif self.tinyurl_config['service'] == 'custom':
          self.tiny_class = TinyUrl
       else:
-         self.log.warn("Disabling tinyurl, unknown service %s" % (tinyurl_config['service']))
+         self.log.warn("Disabling tinyurl, unknown service %s" % (self.tinyurl_config['service']))
          self.tinyurl_config = None
 
       self.platform = platform.system()
@@ -187,6 +205,9 @@ class Screenshot(object):
             clipboard_url = short_url
 
       self.clipboard_copy(clipboard_url)
+
+      if self.warm_cache == True:
+            self.warm_cache_url(clipboard_url)
       
       # trash original
       os.unlink(filename)
@@ -260,6 +281,17 @@ class Screenshot(object):
       else:
          self.log.warn("clipboard not supported or no short url")
 
+   def warm_cache_url(self, url):
+      f = None
+      self.log.info("warm cache url %s", url)
+      try:
+         f = urllib.urlopen(url)
+      except Exception, e:
+         self.log.error("%s", e)
+         return
+
+      content = f.read()
+      return
 
    def sync_static(self):
       for dirpath, dirnames, filenames in os.walk("static/"):
@@ -582,8 +614,12 @@ if __name__ == '__main__':
    egress_fqdn = config.get('screenshot', 'egress_fqdn')
    page_size = config.getint('screenshot', 'page_size')
    use_clipboard = boolval(config.get('screenshot', 'use_clipboard'))
+   warm_cache = boolval(config.get('screenshot', 'warm_cache'))
 
-   app = Screenshot(screenshot_dir, screenshot_index, s3_config, couchdb_config, tinyurl_config, use_clipboard)
+   opts = ScreenshotOptions(screenshot_dir, screenshot_index, s3_config, couchdb_config, tinyurl_config, use_clipboard)
+   opts.warm_cache = warm_cache
+
+   app = Screenshot(opts)
 
    app.configure_s3()
    app.configure_couchdb()
