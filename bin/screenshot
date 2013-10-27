@@ -3,7 +3,10 @@ import platform, logging,  os, sys, time, traceback, json, ConfigParser, calenda
 from optparse import OptionParser
 from boto.s3.connection import S3Connection
 from boto.s3.key import Key
-from pyimgur import Imgur
+try:
+    from pyimgur import Imgur
+except ImportError:
+    Imgur = None
 from StringIO import StringIO
 from ConfigParser import SafeConfigParser
 
