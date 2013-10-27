@@ -3,6 +3,7 @@ import platform, logging,  os, sys, time, traceback, json, ConfigParser, calenda
 from optparse import OptionParser
 from boto.s3.connection import S3Connection
 from boto.s3.key import Key
+from pyimgur import Imgur
 from StringIO import StringIO
 from ConfigParser import SafeConfigParser
 
@@ -45,6 +46,12 @@ enabled = no
 #secret = XXX
 #bucket = XXX
 end_point = s3.amazonaws.com
+
+[imgur]
+enabled = no
+client_id = 2ff238bd2a1883c
+client_secret = 
+title = Screenshot
 
 [tinyurl]
 enabled = no
@@ -96,6 +103,7 @@ class ScreenshotOptions(object):
       screenshot_dir = '/tmp/screenshots', 
       screenshot_index = 'tmp/screenshots.index',
       s3_config = None,
+      imgur_config = None,
       couchdb_config = None,
       tinyurl_config = None,
       use_clipboard = False,
@@ -112,6 +120,7 @@ class Screenshot(object):
       self.conn = None
       self.bucket = None
       self.s3_config = opts.s3_config
+      self.imgur_config = opts.imgur_config
       self.couchdb_config = opts.couchdb_config
       self.use_clipboard = opts.use_clipboard
       self.warm_cache = opts.warm_cache
@@ -182,6 +191,12 @@ class Screenshot(object):
       else:
          s3_key = None
          s3_url = None
+
+      if self.imgur_config:
+         im = Imgur(self.imgur_config['client_id'], self.imgur_config['client_secret'])
+         uploaded_image = im.upload_image(filename, title=self.imgur_config['title'])
+         self.clipboard_copy(uploaded_image.link)
+         URLS.append(uploaded_image.link)
 
       # add metadata record and image to couchdb if configured
       if self.couchdb_config:
@@ -597,6 +612,17 @@ if __name__ == '__main__':
    else:
       log.info("s3 is disabled")
 
+
+   imgur_config = None
+   if config.has_section('imgur') and boolval(config.get('imgur', 'enabled')):
+      imgur_config = {}
+      imgur_config['client_id'] = config.get('imgur', 'client_id')
+      imgur_config['client_secret'] = config.get('imgur', 'client_secret')
+      imgur_config['title'] = config.get('imgur', 'title')
+      log.info("imgur is enabled")
+   else:
+      log.info("imgur is disabled")
+
    tinyurl_config = None
    if config.has_section('tinyurl') and boolval(config.get('tinyurl', 'enabled')):
       tinyurl_config = {}
@@ -616,7 +642,7 @@ if __name__ == '__main__':
    use_clipboard = boolval(config.get('screenshot', 'use_clipboard'))
    warm_cache = boolval(config.get('screenshot', 'warm_cache'))
 
-   opts = ScreenshotOptions(screenshot_dir, screenshot_index, s3_config, couchdb_config, tinyurl_config, use_clipboard)
+   opts = ScreenshotOptions(screenshot_dir, screenshot_index, s3_config, imgur_config, couchdb_config, tinyurl_config, use_clipboard)
    opts.warm_cache = warm_cache
 
    app = Screenshot(opts)
