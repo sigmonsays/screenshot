@@ -199,7 +199,7 @@ class Screenshot(object):
                 break
 
          self.log.info("Saving to disk at %s", saved_name)
-         os.makedirs(os.path.dirname(saved_name))
+         if not os.path.exists(dir): os.makedirs(os.path.dirname(saved_name))
          shutil.copyfile(filename, saved_name)
 
       if self.s3_config:
