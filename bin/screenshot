@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-import shutil, platform, logging,  os, sys, time, traceback, json, ConfigParser, calendar, httplib, urllib, urlparse
+import shutil, platform, logging,  os, sys, time, traceback, json, ConfigParser, calendar, httplib, urllib, urlparse, string, random
 from optparse import OptionParser
 from boto.s3.connection import S3Connection
 from boto.s3.key import Key
@@ -35,6 +35,9 @@ page_size = 10
 
 # use xclip to capture the URL
 use_clipboard = yes
+
+# use randomized filename
+random_filename = no
 
 # download the remote file url (clipboard url) to warm any cache
 warm_cache = yes
@@ -115,6 +118,7 @@ class ScreenshotOptions(object):
       couchdb_config = None,
       tinyurl_config = None,
       use_clipboard = False,
+      random_filename=True,
       warm_cache = True,
       egress_fqdn = None,
    ):
@@ -132,6 +136,7 @@ class Screenshot(object):
       self.imgur_config = opts.imgur_config
       self.couchdb_config = opts.couchdb_config
       self.use_clipboard = opts.use_clipboard
+      self.random_filename = opts.random_filename
       self.warm_cache = opts.warm_cache
       self.egress_fqdn = opts.egress_fqdn
       self.tinyurl_config = opts.tinyurl_config
@@ -177,8 +182,14 @@ class Screenshot(object):
          shortname = sys.argv[1]
       else:
          shortname = "screenshot"
+
+      if self.random_filename:
+         ts  = ''.join([random.choice(string.ascii_letters + string.digits) for n in xrange(18)])
+
       basename = "%s-%s.jpg" % ( shortname, ts )
       filename = os.path.join(self.screenshot_dir, basename)
+
+      print "filename %s" % (filename)
 
       dir = os.path.dirname(filename)
       if not os.path.exists(dir): os.makedirs(dir)
@@ -673,6 +684,7 @@ if __name__ == '__main__':
    egress_fqdn = config.get('screenshot', 'egress_fqdn')
    page_size = config.getint('screenshot', 'page_size')
    use_clipboard = boolval(config.get('screenshot', 'use_clipboard'))
+   random_filename = boolval(config.get('screenshot', 'random_filename'))
    warm_cache = boolval(config.get('screenshot', 'warm_cache'))
 
    opts = ScreenshotOptions(screenshot_dir, screenshot_index, disk_config, s3_config, imgur_config, couchdb_config, tinyurl_config, use_clipboard)
