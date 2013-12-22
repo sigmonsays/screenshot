@@ -1,9 +1,12 @@
 #!/usr/bin/env python
-import platform, logging,  os, sys, time, traceback, json, ConfigParser, calendar, httplib, urllib, urlparse
+import shutil, platform, logging,  os, sys, time, traceback, json, ConfigParser, calendar, httplib, urllib, urlparse
 from optparse import OptionParser
 from boto.s3.connection import S3Connection
 from boto.s3.key import Key
-from pyimgur import Imgur
+try:
+    from pyimgur import Imgur
+except ImportError:
+    Imgur = None
 from StringIO import StringIO
 from ConfigParser import SafeConfigParser
 
@@ -39,6 +42,10 @@ warm_cache = yes
 [couchdb]
 enabled = no
 #uri = "http://username.couchone.com/screenshot"
+
+[disk]
+enabled = yes
+save_dir = ~/Pictures/screenshot
 
 [s3]
 enabled = no
@@ -102,6 +109,7 @@ class ScreenshotOptions(object):
    def __init__(self, 
       screenshot_dir = '/tmp/screenshots', 
       screenshot_index = 'tmp/screenshots.index',
+      disk_config = None,
       s3_config = None,
       imgur_config = None,
       couchdb_config = None,
@@ -119,6 +127,7 @@ class Screenshot(object):
       self.screenshot_index = opts.screenshot_index
       self.conn = None
       self.bucket = None
+      self.disk_config = opts.disk_config
       self.s3_config = opts.s3_config
       self.imgur_config = opts.imgur_config
       self.couchdb_config = opts.couchdb_config
@@ -136,6 +145,12 @@ class Screenshot(object):
          self.tinyurl_config = None
 
       self.platform = platform.system()
+
+   def configure_disk(self):
+      if not self.disk_config:
+         return
+      c = self.disk_config
+      self.save_dir = os.path.expanduser(c['save_dir'])
 
    def configure_s3(self):
       if not self.s3_config:
@@ -176,6 +191,16 @@ class Screenshot(object):
          raise Exception("Unsupported platform %s" % (self.platform))
 
       URLS = []
+
+      if self.disk_config:
+         for n in xrange(1000):
+             saved_name = os.path.join(self.save_dir, basename)
+             if os.path.exists(saved_name) == False:
+                break
+
+         self.log.info("Saving to disk at %s", saved_name)
+         if not os.path.exists(dir): os.makedirs(os.path.dirname(saved_name))
+         shutil.copyfile(filename, saved_name)
 
       if self.s3_config:
          s3_key = os.path.join(ts.replace(":", "/").replace("-", "/"), shortname) + ".jpg"
@@ -601,6 +626,14 @@ if __name__ == '__main__':
    else:
       log.info("couchdb is disabled")
 
+   disk_config = None
+   if config.has_section('disk') and boolval(config.get('disk', 'enabled')):
+      disk_config = {}
+      disk_config['save_dir'] = config.get('disk', 'save_dir')
+      log.info("disk is enabled")
+   else:
+      log.info("disk is disabled")
+
    s3_config = None
    if config.has_section('s3') and boolval(config.get('s3', 'enabled')):
       s3_config = {}
@@ -642,11 +675,12 @@ if __name__ == '__main__':
    use_clipboard = boolval(config.get('screenshot', 'use_clipboard'))
    warm_cache = boolval(config.get('screenshot', 'warm_cache'))
 
-   opts = ScreenshotOptions(screenshot_dir, screenshot_index, s3_config, imgur_config, couchdb_config, tinyurl_config, use_clipboard)
+   opts = ScreenshotOptions(screenshot_dir, screenshot_index, disk_config, s3_config, imgur_config, couchdb_config, tinyurl_config, use_clipboard)
    opts.warm_cache = warm_cache
 
    app = Screenshot(opts)
 
+   app.configure_disk()
    app.configure_s3()
    app.configure_couchdb()
 
