@@ -687,6 +687,7 @@ if __name__ == '__main__':
 
    opts = ScreenshotOptions(screenshot_dir, screenshot_index, disk_config, s3_config, imgur_config, couchdb_config, tinyurl_config, use_clipboard)
    opts.warm_cache = warm_cache
+   opts.random_filename = random_filename
 
    app = Screenshot(opts)
 
