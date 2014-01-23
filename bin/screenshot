@@ -36,6 +36,18 @@ page_size = 10
 # use xclip to capture the URL
 use_clipboard = yes
 
+# screenshot method (autodetected by default) but you can override if you wish
+# method can be 
+# - imagemagick - use "import" command
+# - gnome - use gnome-screenshot -a -f FILE
+# - auto - detect automatically based on platform
+# - screencapture - for MacOSX
+# capture_method = gnome
+
+capture_method = auto
+
+random_filename = no
+
 # use randomized filename
 random_filename = no
 
@@ -119,6 +131,7 @@ class ScreenshotOptions(object):
       tinyurl_config = None,
       use_clipboard = False,
       random_filename=True,
+      capture_method=None,
       warm_cache = True,
       egress_fqdn = None,
    ):
@@ -137,6 +150,7 @@ class Screenshot(object):
       self.couchdb_config = opts.couchdb_config
       self.use_clipboard = opts.use_clipboard
       self.random_filename = opts.random_filename
+      self.capture_method = opts.capture_method
       self.warm_cache = opts.warm_cache
       self.egress_fqdn = opts.egress_fqdn
       self.tinyurl_config = opts.tinyurl_config
@@ -176,6 +190,14 @@ class Screenshot(object):
       short_url = tinysvc(service, url)
       return short_url
 
+   def detect_capture_methods(self):
+      if self.platform == 'Linux':
+         return ['imagemagick', 'gnome']
+      elif self.platform == 'Darwin':
+         return ['screencapture']
+      self.log.warn("Unsupported platform %s", self.platform)
+      return []
+
    def take_screenshot(self):
       ts = time.strftime("%F-%T").replace(":", "-")
       if len(sys.argv) > 1:
@@ -192,13 +214,22 @@ class Screenshot(object):
       dir = os.path.dirname(filename)
       if not os.path.exists(dir): os.makedirs(dir)
 
-      if self.platform == 'Linux':
+      if self.capture_method == None or self.capture_method == 'auto':
+         methods = self.detect_capture_methods()
+         method = methods[0]
+      else:
+         method = self.capture_method
+
+      self.log.info("capture screenshot method %s", method)
+      if method == 'imagemagick':
          os.system("import %s" % (filename))
-      elif self.platform == 'Darwin':
+      elif method == 'gnome':
+         os.system("gnome-screenshot -a -f %s" % (filename))
+      elif method == 'screencapture':
          os.system("screencapture -s %s" % (filename))
       else:
-         raise Exception("Unsupported platform %s" % (self.platform))
-
+         raise Exception("Unsupported capture method platform %s, method %s" % (self.platform, method))
+      
       URLS = []
 
       if self.disk_config:
@@ -683,11 +714,13 @@ if __name__ == '__main__':
    page_size = config.getint('screenshot', 'page_size')
    use_clipboard = boolval(config.get('screenshot', 'use_clipboard'))
    random_filename = boolval(config.get('screenshot', 'random_filename'))
+   capture_method = config.get('screenshot', 'capture_method').lower()
    warm_cache = boolval(config.get('screenshot', 'warm_cache'))
 
    opts = ScreenshotOptions(screenshot_dir, screenshot_index, disk_config, s3_config, imgur_config, couchdb_config, tinyurl_config, use_clipboard)
    opts.warm_cache = warm_cache
    opts.random_filename = random_filename
+   opts.capture_method = capture_method
 
    app = Screenshot(opts)
 
