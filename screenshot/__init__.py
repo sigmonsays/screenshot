@@ -353,7 +353,11 @@ class Screenshot(object):
       for obj in self._iter_s3_images():
          tmp = obj.name.split("/", 6)
          tmp.pop()
-         tmp = map(int, tmp)
+         try:
+             tmp = map(int, tmp)
+         except Exception, e:
+             self.log.exception(e)
+             continue
          y, m, d, h, i, s = tmp
          k = (y, m) 
          if not k in cal:
