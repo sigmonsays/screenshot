@@ -19,7 +19,9 @@ and stores them in a document with a 'image' attachment.
 If configured you can also use a tinyurl service, although support for that is very limited
 at the moment. It only supports a HTTP POST to a custom script.
 
---- sample ~/.screenshot/screenshot.ini config file ---
+
+sample ~/.screenshot/screenshot.ini config file
+<pre>
 [screenshot]
 use_clipboard = yes
 egress_fqdn = screenshot.example.net
@@ -30,7 +32,7 @@ key = XXXXXXXXXXXXXXXXXXXX
 secret = XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
 bucket = XXXXXXXXXX
 
----- end configuration sample -------------------------
+</pre>
 
 An image calendar can be build using static HTML when you are storing
 objects in S3. This can be done using the --update-full-calendar option.
