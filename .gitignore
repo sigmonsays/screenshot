@@ -1,2 +1,15 @@
 *.pyc
 *.swp
+
+/build/
+/debian/files
+/debian/python-module-stampdir/
+/debian/screenshot.debhelper.log
+/debian/screenshot.postinst.debhelper
+/debian/screenshot.prerm.debhelper
+/debian/screenshot.substvars
+/debian/screenshot/
+/dist/
+/screenshot.egg-info/
+/venv/
+
