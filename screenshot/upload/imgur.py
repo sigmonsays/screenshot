@@ -1,4 +1,3 @@
-import os
 from pyimgur import Imgur
 
 from screenshot.upload import Upload
@@ -14,7 +13,6 @@ class ImgurUpload(Upload):
         self.__dict__.update(locals())
 
     def upload(self, filename, shortname):
-        basename = os.path.basename(filename)
         result = self.im.upload_image(filename, title=shortname)
         self.set_url('http://imgur.com/v/'+result.id)
         return True

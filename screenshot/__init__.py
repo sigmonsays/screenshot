@@ -146,7 +146,7 @@ class Screenshot(object):
 
         # Decide if we should clipboard the url or not
         if self.clipboard_method == uploader.upload_method:
-            if upload.url:
+            if uploader.url:
                 self.clipboard.add_url(uploader.url)
             else:
                 self.log.warn("clipboard method set to %s but no url returned", self.clipboard_method)

@@ -11,12 +11,14 @@ class CouchdbUpload(Upload):
    upload_method = 'couchdb'
 
    def __init__(self, couchdb_uri):
-      Upload.__init__(self, clipboard)
+      Upload.__init__(self)
       self.__dict__.update(locals())
 
    def upload(self, filename, shortname):
       ts = time.strftime("%F-%T").replace(":", "-")
       ret = self.save_couchdb(ts, filename, shortname)
+      if ret == None:
+        return False
       return True
 
    def save_couchdb(self, ts, filename, shortname, s3_url = None, s3_key = None):
