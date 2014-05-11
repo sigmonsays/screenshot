@@ -71,6 +71,7 @@ class DarwinScreenCapture(CaptureMethod):
 
 CaptureMethods = {
     'imagemagick': ImageMagick,
+    'null': NullCapture,
     'gnome': Gnome,
     'screencapture': DarwinScreenCapture,
 }
