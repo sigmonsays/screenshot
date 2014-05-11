@@ -19,7 +19,7 @@ class CaptureDetect:
       return []
 
 
-class CaptureBuilder():
+class CaptureBuilder:
     def __init__(self):
         self.log = logging.getLogger(self.__class__.__name__)
 
@@ -51,23 +51,24 @@ class NullCapture(CaptureMethod):
         self.log.debug("filename %s", filename)
         return True
 
-class ImageMagick(CaptureMethod):
+class ShellCapture(CaptureMethod):
+    cmd = None
+
     def capture(self, filename):
-        self.log.info("capture %s", filename)
-        os.system("import %s" % (filename))
+        self.log.info("%s", filename)
+        cmdline = "%s %s" % (self.cmd, filename)
+        self.log.debug("cmdline %s", cmdline)
+        os.system(cmdline)
         return True
 
-class Gnome(CaptureMethod):
-    def capture(self, filename):
-        self.log.info("capture %s", filename)
-        os.system("gnome-screenshot -a -f %s" % (filename))
-        return True
+class ImageMagick(ShellCapture):
+    cmd = "import"
 
-class DarwinScreenCapture(CaptureMethod):
-    def capture(self, filename):
-        self.log.info("capture %s", filename)
-        os.system("screencapture -s %s" % (filename))
-        return True
+class Gnome(ShellCapture):
+    cmd = "gnome-screenshot -a -f"
+
+class DarwinScreenCapture(ShellCapture):
+    cmd = "screencapture -s"
 
 CaptureMethods = {
     'imagemagick': ImageMagick,

@@ -8,18 +8,18 @@ from screenshot.upload import Upload
 class S3Upload(Upload):
    upload_method = 's3'
 
-   def __init__(self, clipboard, key, secret, end_point, bucket):
+   def __init__(self, clipboard, key, secret, end_point, bucket_name):
       Upload.__init__(self, clipboard)
-      self.log.debug("end_point %s bucket %s", end_point, bucket)
+      self.log.debug("end_point %s bucket %s", end_point, bucket_name)
       conn = S3Connection(aws_access_key_id=key, aws_secret_access_key=secret, host=end_point)
-      bucket = conn.get_bucket(bucket)
+      bucket = conn.get_bucket(bucket_name)
       self.__dict__.update(locals())
 
    def upload(self, localfile, shortname):
       ts = time.strftime("%F-%T").replace(":", "-")
 
       s3_key = os.path.join(ts.replace(":", "/").replace("-", "/"), shortname) + ".jpg"
-      s3_url = "http://%s.%s/%s" % (self.bucket, self.end_point, s3_key )
+      s3_url = "http://%s.%s/%s" % (self.bucket_name, self.end_point, s3_key )
       self.log.info("s3 url %s" %(s3_url))
       self.set_url(s3_url)
       k = Key(self.bucket)

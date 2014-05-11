@@ -12,6 +12,7 @@ class Upload:
       raise Exception(NotImplemented)
 
    def set_url(self, url):
+      self.log.debug("%s", url)
       self.url = url
       
 class NullUpload(Upload):

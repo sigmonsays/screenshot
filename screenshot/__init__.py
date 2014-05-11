@@ -45,7 +45,6 @@ class Screenshot(object):
       self.egress_url = opts.egress_url
       self.tinyurl_config = opts.tinyurl_config
 
-      self.egress_url = opts.egress_url
 
       self.platform = platform.system()
       self.tiny = MakeTinyUrl(opts.tinyurl_config)
@@ -138,7 +137,7 @@ class Screenshot(object):
             self.log.error("Support for %s is not available", uploader_name)
             continue
 
-        self.log.debug("Uploading %s using %s", filename, uploader.__class__.__name__)
+        self.log.debug("%s Uploading %s", uploader.__class__.__name__, filename)
         result = uploader.upload(filename, shortname)
         if result != True:
             self.log.warn("Uploading to %s failed: result %s", uploader.__class__.__name__, result)
@@ -155,13 +154,25 @@ class Screenshot(object):
       self.log.info("clipboard url %s", clipboard_url)
 
       short_url = self.tiny.make_url(clipboard_url)
+      if short_url:
+        self.clipboard.add_url(short_url)
+
+      self.log.debug("clipboard method %s", self.clipboard_method)
+
       if self.clipboard_method == 'tinurl':
             self.clipboard.copy(short_url)
       elif self.clipboard_method == 'template':
             egress_url = self.egress_url % (shortname)
             self.clipboard.copy(egress_url)
+            clipboard_url = egress_url
       elif clipboard_url:
             self.clipboard.copy(clipboard_url)
+      elif self.clipboard_method == 'last':
+            clipboard_url = self.clipboard.get_url()
+            self.clipboard.copy(clipboard_url)
+      else:
+            self.log.error("Invalid clipboard method %s", self.clipboard_method)
+            clipboard_url = self.clipboard.get_url()
 
       if self.warm_cache == True:
             self.warm_cache_url(clipboard_url)
