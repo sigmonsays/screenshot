@@ -16,7 +16,7 @@ class CouchdbUpload(Upload):
 
    def upload(self, meta, filename, shortname):
       # TODO: Generate timestamp from meta.now
-      ts = time.strftime("%F-%T").replace(":", "-")
+      ts = time.strftime("%F-%T", meta.now).replace(":", "-")
       ret = self.save_couchdb(ts, filename, shortname)
       if ret == None:
         return False
