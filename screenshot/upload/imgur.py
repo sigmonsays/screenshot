@@ -12,7 +12,7 @@ class ImgurUpload(Upload):
         self.im = im
         self.__dict__.update(locals())
 
-    def upload(self, filename, shortname):
+    def upload(self, meta, filename, shortname):
         result = self.im.upload_image(filename, title=shortname)
         self.set_url('http://imgur.com/v/'+result.id)
         return True

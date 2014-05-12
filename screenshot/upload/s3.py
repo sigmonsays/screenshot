@@ -15,8 +15,9 @@ class S3Upload(Upload):
       bucket = conn.get_bucket(bucket_name)
       self.__dict__.update(locals())
 
-   def upload(self, localfile, shortname):
-      ts = time.strftime("%F-%T").replace(":", "-")
+   def upload(self, meta, localfile, shortname):
+      
+      ts = time.strftime("%F-%T", meta.now).replace(":", "-")
 
       s3_key = os.path.join(ts.replace(":", "/").replace("-", "/"), shortname) + ".jpg"
       s3_url = "http://%s.%s/%s" % (self.bucket_name, self.end_point, s3_key )

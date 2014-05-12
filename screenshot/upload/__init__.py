@@ -19,6 +19,6 @@ class NullUpload(Upload):
    def __init__(self, clipboard, *args, **kwargs):
       Upload.__init__(self, clipboard)
 
-   def upload(self, localfile, shortname):
+   def upload(self, meta, localfile, shortname):
       self.log.debug("%s shortname %s", localfile, shortname)
       return True

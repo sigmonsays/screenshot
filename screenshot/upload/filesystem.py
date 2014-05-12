@@ -11,7 +11,7 @@ class FilesystemUpload(Upload):
         Upload.__init__(self, clipboard)
         self.__dict__.update(locals())
 
-    def upload(self, localfile, shortname):
+    def upload(self, meta, localfile, shortname):
         basename = os.path.basename(localfile)
 
         for n in xrange(1000):

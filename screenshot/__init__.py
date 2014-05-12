@@ -28,6 +28,27 @@ except ImportError:
 from screenshot.upload.filesystem import FilesystemUpload
 from screenshot.tinyurl import MakeTinyUrl
 
+class ShotMetadata:
+
+    def __init__(self):
+        self.screenshot_dir = None
+        self.shortname = "screenshot"
+        self.now = time.localtime()
+        self.ts = time.strftime("%F-%T").replace(":", "-")
+
+    def __str__(self):
+        ret = "<%s " % (self.__class__.__name__)
+        ret += " ".join([ "%s=%s" % (k, v) for k, v in self.to_dict().iteritems() ])
+        ret += ">"
+        return ret
+
+    def to_dict(self):
+        return self.__dict__
+
+    def get_filename(self):
+        basename = "%s-%s.jpg" % ( self.shortname, self.ts )
+        return os.path.join(self.screenshot_dir, basename)
+
 class Screenshot(object):
    def __init__(self, opts):
       self.log = logging.getLogger(self.__class__.__name__)
@@ -98,31 +119,26 @@ class Screenshot(object):
       self.configure_imgur()
 
 
-   def get_shortname(self, shortname=None):
-      if shortname == None:
-         shortname = "screenshot"
-      return shortname
-
-   def get_filename(self):
+   def get_shot(self, shortname):
       """
       return a local filename where we save our screenshot
 
       This is a temporary location and will be deleted when finished
       """
-      ts = time.strftime("%F-%T").replace(":", "-")
-      shortname = self.get_shortname()
 
+      meta = ShotMetadata()
+      meta.screenshot_dir = self.screenshot_dir
       if self.random_filename:
-         ts  = ''.join([random.choice(string.ascii_letters + string.digits) for n in xrange(18)])
-
-      basename = "%s-%s.jpg" % ( shortname, ts )
-      filename = os.path.join(self.screenshot_dir, basename)
-      self.log.debug("return %s", filename)
-      return filename
+         meta.ts  = ''.join([random.choice(string.ascii_letters + string.digits) for n in xrange(18)])
+      if shortname != None:
+         meta.shortname = shortname
+      self.log.debug("return %s", meta)
+      return meta
 
    def take_screenshot(self, shortname=None):
-      shortname = self.get_shortname(shortname)
-      filename = self.get_filename()
+      meta = self.get_shot(shortname)
+
+      filename = meta.get_filename()
       dir = os.path.dirname(filename)
       if not os.path.exists(dir): os.makedirs(dir)
 
@@ -138,7 +154,7 @@ class Screenshot(object):
             continue
 
         self.log.debug("%s Uploading %s", uploader.__class__.__name__, filename)
-        result = uploader.upload(filename, shortname)
+        result = uploader.upload(meta, filename, shortname)
         if result != True:
             self.log.warn("Uploading to %s failed: result %s", uploader.__class__.__name__, result)
             continue
@@ -162,7 +178,15 @@ class Screenshot(object):
       if self.clipboard_method == 'tinurl':
             self.clipboard.copy(short_url)
       elif self.clipboard_method == 'template':
-            egress_url = self.egress_url % (shortname)
+
+            tmpl = {
+                'basename'  : os.path.basename(filename),
+                'filename'  : filename,
+                'key'       : os.path.join(meta.ts.replace(":", "/").replace("-", "/"), meta.shortname) + ".jpg",
+            }
+            tmpl.update(meta.to_dict())
+
+            egress_url = self.egress_url % tmpl
             self.clipboard.copy(egress_url)
             clipboard_url = egress_url
       elif clipboard_url:
