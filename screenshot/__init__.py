@@ -130,7 +130,9 @@ class Screenshot(object):
       meta.screenshot_dir = self.screenshot_dir
       if self.random_filename:
          meta.ts  = ''.join([random.choice(string.ascii_letters + string.digits) for n in xrange(18)])
-      if shortname != None:
+      if shortname == None:
+         meta.shortname = 'screenshot'
+      else:
          meta.shortname = shortname
       self.log.debug("return %s", meta)
       return meta
@@ -154,7 +156,7 @@ class Screenshot(object):
             continue
 
         self.log.debug("%s Uploading %s", uploader.__class__.__name__, filename)
-        result = uploader.upload(meta, filename, shortname)
+        result = uploader.upload(meta, filename, meta.shortname)
         if result != True:
             self.log.warn("Uploading to %s failed: result %s", uploader.__class__.__name__, result)
             continue
