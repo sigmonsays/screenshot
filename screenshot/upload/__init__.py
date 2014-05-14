@@ -14,6 +14,9 @@ class Upload:
    def set_url(self, url):
       self.log.debug("%s", url)
       self.url = url
+
+   def __str__(self):
+      return "<%s>" % (self.__class__.__name__)
       
 class NullUpload(Upload):
    def __init__(self, clipboard, *args, **kwargs):

@@ -80,6 +80,7 @@ class Screenshot(object):
       save_dir = os.path.expanduser(c['save_dir'])
       filesystem = FilesystemUpload(self.clipboard, save_dir)
       self.uploaders['filesystem'] = filesystem
+      self.log.debug("Registered %s", filesystem)
 
    def configure_s3(self):
       if not self.s3_config or S3Upload == NullUpload:
@@ -89,6 +90,7 @@ class Screenshot(object):
       c = self.s3_config
       s3 = S3Upload(self.clipboard, c['key'], c['secret'], c['end_point'], c['bucket'])
       self.uploaders['s3'] = s3
+      self.log.debug("Registered %s", s3)
 
    def configure_couchdb(self):
       if not self.couchdb_config or CouchdbUpload == NullUpload:
@@ -98,6 +100,7 @@ class Screenshot(object):
       couchdb_uri = self.couchdb_config['uri']
       couchdb = CouchdbUpload(self.clipboard, couchdb_uri)
       self.uploaders['couchdb'] = couchdb
+      self.log.debug("Registered %s", couchdb)
 
    def configure_imgur(self):
       if not self.imgur_config or ImgurUpload == NullUpload:
@@ -107,6 +110,7 @@ class Screenshot(object):
 
       imgur = ImgurUpload(self.clipboard, self.imgur_config['client_id'], self.imgur_config['client_secret'])
       self.uploaders['imgur'] = imgur
+      self.log.debug("Registered %s", imgur)
 
    def configure(self):
 
