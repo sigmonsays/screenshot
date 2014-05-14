@@ -74,7 +74,7 @@ class Screenshot(object):
    def configure_filesystem(self):
       if not self.disk_config:
          return
-      if not self.disk_config.get('enabled') != True:
+      if self.disk_config.get('enabled') != True:
          return
       c = self.disk_config
       save_dir = os.path.expanduser(c['save_dir'])
