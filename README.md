@@ -21,10 +21,11 @@ at the moment. It only supports a HTTP POST to a custom script.
 
 
 sample ~/.screenshot/screenshot.ini config file
+
 <pre>
 [screenshot]
 use_clipboard = yes
-egress_fqdn = screenshot.example.net
+egress_url = http://screenshot.example.net//%((key)s
 
 [s3]
 enabled = yes
