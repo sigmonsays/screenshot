@@ -35,6 +35,7 @@ class TumblrUpload(Upload):
             state="published", 
             tags=tags, 
             slug=description, 
+            caption=description, 
             link=img_url, 
             data=[filename],
         )
