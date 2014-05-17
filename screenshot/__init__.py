@@ -81,6 +81,12 @@ class Screenshot(object):
       self.platform = platform.system()
       self.tiny = MakeTinyUrl(opts.tinyurl_config)
       self.uploaders = {}
+      self.uploader_config = {}
+
+   def register_uploader(self, uploader, cfg):
+      self.uploaders[uploader.upload_method] = uploader
+      self.uploader_config[uploader.upload_method] = cfg
+      self.log.debug("Registered %s", uploader)
 
    def configure_filesystem(self):
       if not self.disk_config:
@@ -90,8 +96,7 @@ class Screenshot(object):
       c = self.disk_config
       save_dir = os.path.expanduser(c['save_dir'])
       filesystem = FilesystemUpload(self.clipboard, save_dir)
-      self.uploaders['filesystem'] = filesystem
-      self.log.debug("Registered %s", filesystem)
+      self.register_uploader(filesystem, self.disk_config)
 
    def configure_s3(self):
       if not self.s3_config or S3Upload == NullUpload:
@@ -100,8 +105,7 @@ class Screenshot(object):
          return
       c = self.s3_config
       s3 = S3Upload(self.clipboard, c['key'], c['secret'], c['end_point'], c['bucket'])
-      self.uploaders['s3'] = s3
-      self.log.debug("Registered %s", s3)
+      self.register_uploader(s3, self.s3_config)
 
    def configure_couchdb(self):
       if not self.couchdb_config or CouchdbUpload == NullUpload:
@@ -110,8 +114,7 @@ class Screenshot(object):
          return
       couchdb_uri = self.couchdb_config['uri']
       couchdb = CouchdbUpload(self.clipboard, couchdb_uri)
-      self.uploaders['couchdb'] = couchdb
-      self.log.debug("Registered %s", couchdb)
+      self.register_uploader(couchdb, self.couchdb_config)
 
    def configure_imgur(self):
       if not self.imgur_config or ImgurUpload == NullUpload:
@@ -120,8 +123,7 @@ class Screenshot(object):
          return
 
       imgur = ImgurUpload(self.clipboard, self.imgur_config['client_id'], self.imgur_config['client_secret'])
-      self.uploaders['imgur'] = imgur
-      self.log.debug("Registered %s", imgur)
+      self.register_uploader(imgur, self.imgur_config)
 
    def configure_tumblr(self):
       if not self.tumblr_config or TumblrUpload == NullUpload:
@@ -131,8 +133,7 @@ class Screenshot(object):
 
       c = self.tumblr_config
       tumblr = TumblrUpload(self.clipboard, c['blog_url'], c['consumer_key'], c['consumer_secret'], c['oauth_token'], c['oauth_secret'])
-      self.uploaders['tumblr'] = tumblr
-      self.log.debug("Registered %s", tumblr)
+      self.register_uploader(tumblr, self.tumblr_config)
 
    def configure(self):
 
@@ -190,6 +191,11 @@ class Screenshot(object):
       for uploader_name, uploader in self.uploaders.iteritems():
         if isinstance(uploader, NullUpload):
             self.log.error("Support for %s is not available", uploader_name)
+            continue
+
+        uploader_config = self.uploader_config[uploader_name]
+        if uploader_config.get('active') == False:
+            self.log.debug("Skipping %s due to active=False", uploader_name)
             continue
 
         self.log.debug("%s Uploading %s", uploader.__class__.__name__, filename)

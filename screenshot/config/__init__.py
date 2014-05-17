@@ -69,6 +69,7 @@ class ScreenshotOptions(object):
            cfg = dict(config.items(section))
            uploader_config = {}
            uploader_config['enabled'] = True
+           uploader_config['active'] = boolval(cfg.get('active', True))
            for k, v in params.iteritems():
                 uploader_config[k] = cfg.get(k)
            self.log.info("%s is enabled", section)
@@ -80,8 +81,8 @@ class ScreenshotOptions(object):
 
         self.couchdb_config = self.get_uploader_options(config, 'couchdb',  uri=str)
         self.disk_config    = self.get_uploader_options(config, 'disk',     save_dir=str)
-        self.imgur_config   = self.get_uploader_options(config  'imgur'     client_id=str, client_secret=str, title=str)
-        self.s3_config      = self.get_uploader_options(config  's3',       key=str, secret=str, bucket=str, end_point, str)
+        self.imgur_config   = self.get_uploader_options(config, 'imgur',    client_id=str, client_secret=str, title=str)
+        self.s3_config      = self.get_uploader_options(config, 's3',       key=str, secret=str, bucket=str, end_point=str)
         self.tinyurl_config = self.get_uploader_options(config, 'tinyurl',  service=str, service_url=str)
         self.tumblr_config  = self.get_uploader_options(config, 'tumblr',   blog_url=str, consumer_key=str, consumer_secret=str, oauth_token=str, oauth_secret=str)
 

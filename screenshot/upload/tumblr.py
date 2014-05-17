@@ -5,7 +5,7 @@ from screenshot.upload import Upload
 
 class TumblrUpload(Upload):
 
-    verbose = True
+    verbose = False
     upload_method = 'tumblr'
 
     def __init__(self, clipboard, blog_url, consumer_key, consumer_secret, oauth_token, oauth_secret):
@@ -31,7 +31,7 @@ class TumblrUpload(Upload):
         else:
             description = meta.summary
 
-        x = self.cl.create_photo(self.blog_url,
+        result = self.cl.create_photo(self.blog_url,
             state="published", 
             tags=tags, 
             slug=description, 
@@ -40,7 +40,7 @@ class TumblrUpload(Upload):
             data=[filename],
         )
 
-        self.log.info("source=%s create_photo returned %s", img_url, x)
+        self.log.info("filename %s create_photo %s", filename, result)
 
         return True
         

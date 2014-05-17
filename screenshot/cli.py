@@ -43,6 +43,15 @@ class Application:
        opts = config.GetScreenshotOptions(options.config)
        for k, v in opts.__dict__.iteritems():
             self.log.debug("%s: %s", k, v)
+
+       # TODO: Do this in a more clean way...
+       for uploader in options.uploaders:
+           if hasattr(opts, uploader + "_config") == False:
+                self.log.warn("Invalid uploader %s", uploader)
+                continue
+           cfg = getattr(opts, uploader + "_config")
+           cfg['active']=True
+
        app = Screenshot(opts)
 
        app.configure()
@@ -54,7 +63,7 @@ class Application:
        opts.summary = options.summary
        opts.uploaders = options.uploaders
 
-
+        
        app.take_screenshot(shortname, summary)
 
 def main():
