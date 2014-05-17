@@ -62,6 +62,7 @@ class ShotMetadata:
 class Screenshot(object):
    def __init__(self, opts):
       self.log = logging.getLogger(self.__class__.__name__)
+      self.opts = opts
       self.screenshot_dir = opts.screenshot_dir
       self.screenshot_index = opts.screenshot_index
       self.disk_config = opts.disk_config
@@ -76,7 +77,6 @@ class Screenshot(object):
       self.warm_cache = opts.warm_cache
       self.egress_url = opts.egress_url
       self.tinyurl_config = opts.tinyurl_config
-
 
       self.platform = platform.system()
       self.tiny = MakeTinyUrl(opts.tinyurl_config)

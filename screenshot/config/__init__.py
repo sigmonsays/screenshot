@@ -77,71 +77,13 @@ class ScreenshotOptions(object):
         return uploader_config
 
     def load_options(self, config):
-        couchdb_config = None
-        if config.has_section('couchdb') and boolval(config.get('couchdb', 'enabled')):
-           cfg = dict(config.items('couchdb'))
-           couchdb_config = {}
-           couchdb_config['enabled'] = True
-           couchdb_config['uri'] = cfg.get('uri')
-           self.log.info("couchdb is enabled")
-        else:
-           self.log.info("couchdb is disabled")
 
-        disk_config = None
-        if config.has_section('disk') and boolval(config.get('disk', 'enabled')):
-           cfg = dict(config.items('disk'))
-           disk_config = {}
-           disk_config['enabled'] = True
-           disk_config['save_dir'] = cfg.get('save_dir')
-           self.log.info("disk is enabled")
-        else:
-           self.log.info("disk is disabled")
-
-        s3_config = None
-        if config.has_section('s3') and boolval(config.get('s3', 'enabled')):
-           cfg = dict(config.items('s3'))
-           s3_config = {}
-           s3_config['enabled'] = True
-           s3_config['key'] = cfg.get('key')
-           s3_config['secret'] = cfg.get('secret')
-           s3_config['bucket'] = cfg.get('bucket')
-           s3_config['end_point'] = cfg.get('end_point')
-           self.log.info("s3 is enabled")
-        else:
-           self.log.info("s3 is disabled")
-
-
-        imgur_config = None
-        if config.has_section('imgur') and boolval(config.get('imgur', 'enabled')):
-           cfg = dict(config.items('imgur'))
-           imgur_config = {}
-           imgur_config['enabled'] = True
-           imgur_config['client_id'] = cfg.get('client_id')
-           imgur_config['client_secret'] = cfg.get('client_secret')
-           imgur_config['title'] = cfg.get('title')
-           self.log.info("imgur is enabled")
-        else:
-           self.log.info("imgur is disabled")
-
-        tinyurl_config = None
-        if config.has_section('tinyurl') and boolval(config.get('tinyurl', 'enabled')):
-           cfg = dict(config.items('tinyurl'))
-           tinyurl_config = {}
-           tinyurl_config['enabled'] = True
-           tinyurl_config['service'] = cfg.get('service')
-           tinyurl_config['service_url'] = cfg.get('service_url')
-           self.log.info("tinyurl is enabled")
-        else:
-           self.log.info("tinyurl is disabled")
-
-
-
-        self.couchdb_config = couchdb_config
-        self.disk_config = disk_config
-        self.imgur_config = imgur_config
-        self.s3_config = s3_config
-        self.tinyurl_config = tinyurl_config
-        self.tumblr_config = self.get_uploader_options(config, 'tumblr',    blog_url=str, consumer_key=str, consumer_secret=str, oauth_token=str, oauth_secret=str)
+        self.couchdb_config = self.get_uploader_options(config, 'couchdb',  uri=str)
+        self.disk_config    = self.get_uploader_options(config, 'disk',     save_dir=str)
+        self.imgur_config   = self.get_uploader_options(config  'imgur'     client_id=str, client_secret=str, title=str)
+        self.s3_config      = self.get_uploader_options(config  's3',       key=str, secret=str, bucket=str, end_point, str)
+        self.tinyurl_config = self.get_uploader_options(config, 'tinyurl',  service=str, service_url=str)
+        self.tumblr_config  = self.get_uploader_options(config, 'tumblr',   blog_url=str, consumer_key=str, consumer_secret=str, oauth_token=str, oauth_secret=str)
 
         cfg = dict(config.items('screenshot'))
         self.capture_method = cfg.get('capture_method').lower()
