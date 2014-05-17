@@ -26,6 +26,7 @@ class Application:
        parser.add_option("-c", "--config", dest="config", help="config file", metavar="FILE", default=None)
        parser.add_option("-v", "--verbose", dest="verbose", action="store_true", default=False)
        parser.add_option("-l", "--log-level", dest="log_level", default='info', help="set logging level [%default]")
+       parser.add_option("-s", "--summary", dest="summary", default=None, help="optional summary of picture")
        parser = parser
 
        (options, args) = parser.parse_args()
@@ -46,12 +47,12 @@ class Application:
        app.configure()
 
 
-
        shortname = None
        if len(args) > 0:
         shortname = args[0]
+       summary = options.summary
 
-       app.take_screenshot(shortname)
+       app.take_screenshot(shortname, summary)
 
 def main():
     Application().main()

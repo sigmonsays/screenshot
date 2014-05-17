@@ -21,6 +21,7 @@ def GetScreenshotOptions(configfile):
    log = logging.getLogger('')
    opts = ScreenshotOptions()
 
+
    # Load config
    config = SafeConfigParser()
    config.add_section('screenshot')
@@ -38,95 +39,118 @@ def GetScreenshotOptions(configfile):
    else:
       log.warn("No configuration loaded, using defaults")
 
-   couchdb_config = None
-   if config.has_section('couchdb') and boolval(config.get('couchdb', 'enabled')):
-      cfg = dict(config.items('couchdb'))
-      couchdb_config = {}
-      couchdb_config['enabled'] = True
-      couchdb_config['uri'] = cfg.get('uri')
-      log.info("couchdb is enabled")
-   else:
-      log.info("couchdb is disabled")
+   opts.load_options(config)
 
-   disk_config = None
-   if config.has_section('disk') and boolval(config.get('disk', 'enabled')):
-      cfg = dict(config.items('disk'))
-      disk_config = {}
-      disk_config['enabled'] = True
-      disk_config['save_dir'] = cfg.get('save_dir')
-      log.info("disk is enabled")
-   else:
-      log.info("disk is disabled")
-
-   s3_config = None
-   if config.has_section('s3') and boolval(config.get('s3', 'enabled')):
-      cfg = dict(config.items('s3'))
-      s3_config = {}
-      s3_config['enabled'] = True
-      s3_config['key'] = cfg.get('key')
-      s3_config['secret'] = cfg.get('secret')
-      s3_config['bucket'] = cfg.get('bucket')
-      s3_config['end_point'] = cfg.get('end_point')
-      log.info("s3 is enabled")
-   else:
-      log.info("s3 is disabled")
-
-
-   imgur_config = None
-   if config.has_section('imgur') and boolval(config.get('imgur', 'enabled')):
-      cfg = dict(config.items('imgur'))
-      imgur_config = {}
-      imgur_config['enabled'] = True
-      imgur_config['client_id'] = cfg.get('client_id')
-      imgur_config['client_secret'] = cfg.get('client_secret')
-      imgur_config['title'] = cfg.get('title')
-      log.info("imgur is enabled")
-   else:
-      log.info("imgur is disabled")
-
-   tinyurl_config = None
-   if config.has_section('tinyurl') and boolval(config.get('tinyurl', 'enabled')):
-      cfg = dict(config.items('tinyurl'))
-      tinyurl_config = {}
-      tinyurl_config['enabled'] = True
-      tinyurl_config['service'] = cfg.get('service')
-      tinyurl_config['service_url'] = cfg.get('service_url')
-      log.info("tinyurl is enabled")
-   else:
-      log.info("tinyurl is disabled")
-
-   opts.couchdb_config = couchdb_config
-   opts.disk_config = disk_config
-   opts.imgur_config = imgur_config
-   opts.s3_config = s3_config
-   opts.tinyurl_config = tinyurl_config
-
-   cfg = dict(config.items('screenshot'))
-   opts.capture_method = cfg.get('capture_method').lower()
-   opts.egress_url = cfg.get('egress_url')
-   opts.page_size = int(cfg.get('page_size'))
-   opts.random_filename = boolval(cfg.get('random_filename'))
-   opts.screenshot_dir = cfg.get('directory')
-   opts.screenshot_index = cfg.get('index_file')
-   opts.use_clipboard = boolval(cfg.get('use_clipboard'))
-   opts.clipboard_method = cfg.get('clipboard_method')
-   opts.warm_cache = boolval(cfg.get('warm_cache'))
    return opts
 
 class ScreenshotOptions(object):
-   def __init__(self):
-      screenshot_dir = '/tmp/screenshots'
-      screenshot_index = 'tmp/screenshots.index'
-      disk_config = None
-      s3_config = None
-      imgur_config = None
-      couchdb_config = None
-      tinyurl_config = None
-      use_clipboard = False
-      clipboard_method = 'last'
-      random_filename=True
-      capture_method=None
-      warm_cache = True
-      egress_url = None
-      self.__dict__.update(locals())
+    
+    def __init__(self):
+        self.log = logging.getLogger(self.__class__.__name__)
+        screenshot_dir = '/tmp/screenshots'
+        screenshot_index = 'tmp/screenshots.index'
+        disk_config = None
+        s3_config = None
+        imgur_config = None
+        couchdb_config = None
+        tinyurl_config = None
+        use_clipboard = False
+        clipboard_method = 'last'
+        random_filename=True
+        capture_method=None
+        warm_cache = True
+        egress_url = None
+        self.__dict__.update(locals())
+
+
+    def get_uploader_options(self, config, section, **params):
+        uploader_config = None
+        if config.has_section(section) and boolval(config.get(section, 'enabled')):
+           cfg = dict(config.items(section))
+           uploader_config = {}
+           uploader_config['enabled'] = True
+           for k, v in params.iteritems():
+                uploader_config[k] = cfg.get(k)
+           self.log.info("%s is enabled", section)
+        else:
+           self.log.info("%s is disabled", section)
+        return uploader_config
+
+    def load_options(self, config):
+        couchdb_config = None
+        if config.has_section('couchdb') and boolval(config.get('couchdb', 'enabled')):
+           cfg = dict(config.items('couchdb'))
+           couchdb_config = {}
+           couchdb_config['enabled'] = True
+           couchdb_config['uri'] = cfg.get('uri')
+           self.log.info("couchdb is enabled")
+        else:
+           self.log.info("couchdb is disabled")
+
+        disk_config = None
+        if config.has_section('disk') and boolval(config.get('disk', 'enabled')):
+           cfg = dict(config.items('disk'))
+           disk_config = {}
+           disk_config['enabled'] = True
+           disk_config['save_dir'] = cfg.get('save_dir')
+           self.log.info("disk is enabled")
+        else:
+           self.log.info("disk is disabled")
+
+        s3_config = None
+        if config.has_section('s3') and boolval(config.get('s3', 'enabled')):
+           cfg = dict(config.items('s3'))
+           s3_config = {}
+           s3_config['enabled'] = True
+           s3_config['key'] = cfg.get('key')
+           s3_config['secret'] = cfg.get('secret')
+           s3_config['bucket'] = cfg.get('bucket')
+           s3_config['end_point'] = cfg.get('end_point')
+           self.log.info("s3 is enabled")
+        else:
+           self.log.info("s3 is disabled")
+
+
+        imgur_config = None
+        if config.has_section('imgur') and boolval(config.get('imgur', 'enabled')):
+           cfg = dict(config.items('imgur'))
+           imgur_config = {}
+           imgur_config['enabled'] = True
+           imgur_config['client_id'] = cfg.get('client_id')
+           imgur_config['client_secret'] = cfg.get('client_secret')
+           imgur_config['title'] = cfg.get('title')
+           self.log.info("imgur is enabled")
+        else:
+           self.log.info("imgur is disabled")
+
+        tinyurl_config = None
+        if config.has_section('tinyurl') and boolval(config.get('tinyurl', 'enabled')):
+           cfg = dict(config.items('tinyurl'))
+           tinyurl_config = {}
+           tinyurl_config['enabled'] = True
+           tinyurl_config['service'] = cfg.get('service')
+           tinyurl_config['service_url'] = cfg.get('service_url')
+           self.log.info("tinyurl is enabled")
+        else:
+           self.log.info("tinyurl is disabled")
+
+
+
+        self.couchdb_config = couchdb_config
+        self.disk_config = disk_config
+        self.imgur_config = imgur_config
+        self.s3_config = s3_config
+        self.tinyurl_config = tinyurl_config
+        self.tumblr_config = self.get_uploader_options(config, 'tumblr',    blog_url=str, consumer_key=str, consumer_secret=str, oauth_token=str, oauth_secret=str)
+
+        cfg = dict(config.items('screenshot'))
+        self.capture_method = cfg.get('capture_method').lower()
+        self.egress_url = cfg.get('egress_url')
+        self.page_size = int(cfg.get('page_size'))
+        self.random_filename = boolval(cfg.get('random_filename'))
+        self.screenshot_dir = cfg.get('directory')
+        self.screenshot_index = cfg.get('index_file')
+        self.use_clipboard = boolval(cfg.get('use_clipboard'))
+        self.clipboard_method = cfg.get('clipboard_method')
+        self.warm_cache = boolval(cfg.get('warm_cache'))
 

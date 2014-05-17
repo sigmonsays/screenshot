@@ -1,5 +1,12 @@
+Configuration Parameters
+============================
 
-DEFAULT_CONFIG = """
+
+
+Default Configuration
+============================
+
+<pre>
 
 [screenshot]
 # Override what FQDN is use (for a reverse proxy if setup)
@@ -66,12 +73,4 @@ enabled = no
 #service = custom
 #service_url = http://example.org/r
 
-[tumblr]
-enabled = no
-#blog_url = yourname.tumblr.com
-#consumer_key = XX
-#consumer_secret = XX
-#oauth_token = XX
-#oauth_secret = XX
-
-"""
+</pre>

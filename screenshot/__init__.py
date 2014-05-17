@@ -25,6 +25,11 @@ try:
 except ImportError:
     ImgurUpload = NullUpload
 
+try:
+    from screenshot.upload.tumblr import TumblrUpload
+except ImportError:
+    TumblrUpload = NullUpload
+
 from screenshot.upload.filesystem import FilesystemUpload
 from screenshot.tinyurl import MakeTinyUrl
 
@@ -33,8 +38,10 @@ class ShotMetadata:
     def __init__(self):
         self.screenshot_dir = None
         self.shortname = "screenshot"
+        self.summary = None
         self.now = time.localtime()
         self.ts = time.strftime("%F-%T").replace(":", "-")
+        self.url = None
 
     def __str__(self):
         ret = "<%s " % (self.__class__.__name__)
@@ -49,6 +56,9 @@ class ShotMetadata:
         basename = "%s-%s.jpg" % ( self.shortname, self.ts )
         return os.path.join(self.screenshot_dir, basename)
 
+    def get_url(self):
+        return self.url
+    
 class Screenshot(object):
    def __init__(self, opts):
       self.log = logging.getLogger(self.__class__.__name__)
@@ -56,6 +66,7 @@ class Screenshot(object):
       self.screenshot_index = opts.screenshot_index
       self.disk_config = opts.disk_config
       self.s3_config = opts.s3_config
+      self.tumblr_config = opts.tumblr_config
       self.imgur_config = opts.imgur_config
       self.couchdb_config = opts.couchdb_config
       self.use_clipboard = opts.use_clipboard
@@ -112,6 +123,17 @@ class Screenshot(object):
       self.uploaders['imgur'] = imgur
       self.log.debug("Registered %s", imgur)
 
+   def configure_tumblr(self):
+      if not self.tumblr_config or TumblrUpload == NullUpload:
+         return
+      if self.tumblr_config.get('enabled') != True:
+         return
+
+      c = self.tumblr_config
+      tumblr = TumblrUpload(self.clipboard, c['blog_url'], c['consumer_key'], c['consumer_secret'], c['oauth_token'], c['oauth_secret'])
+      self.uploaders['tumblr'] = tumblr
+      self.log.debug("Registered %s", tumblr)
+
    def configure(self):
 
       self.capture = MakeCapture()
@@ -121,9 +143,10 @@ class Screenshot(object):
       self.configure_s3()
       self.configure_couchdb()
       self.configure_imgur()
+      self.configure_tumblr()
 
 
-   def get_shot(self, shortname):
+   def get_shot(self, shortname, summary):
       """
       return a local filename where we save our screenshot
 
@@ -132,6 +155,7 @@ class Screenshot(object):
 
       meta = ShotMetadata()
       meta.screenshot_dir = self.screenshot_dir
+      meta.summary = summary
       if self.random_filename:
          meta.ts  = ''.join([random.choice(string.ascii_letters + string.digits) for n in xrange(18)])
       if shortname == None:
@@ -141,12 +165,21 @@ class Screenshot(object):
       self.log.debug("return %s", meta)
       return meta
 
-   def take_screenshot(self, shortname=None):
-      meta = self.get_shot(shortname)
+   def take_screenshot(self, shortname=None, summary=None):
+      meta = self.get_shot(shortname, summary)
 
       filename = meta.get_filename()
       dir = os.path.dirname(filename)
       if not os.path.exists(dir): os.makedirs(dir)
+
+      tmpl = {
+          'basename'  : os.path.basename(filename),
+          'filename'  : filename,
+          'key'       : os.path.join(meta.ts.replace(":", "/").replace("-", "/"), meta.shortname) + ".jpg",
+      }
+      tmpl.update(meta.to_dict())
+      egress_url = self.egress_url % tmpl
+      meta.url = egress_url
 
       result = self.capture.capture(filename)
       if result != True:
@@ -185,14 +218,6 @@ class Screenshot(object):
             self.clipboard.copy(short_url)
       elif self.clipboard_method == 'template':
 
-            tmpl = {
-                'basename'  : os.path.basename(filename),
-                'filename'  : filename,
-                'key'       : os.path.join(meta.ts.replace(":", "/").replace("-", "/"), meta.shortname) + ".jpg",
-            }
-            tmpl.update(meta.to_dict())
-
-            egress_url = self.egress_url % tmpl
             self.clipboard.copy(egress_url)
             clipboard_url = egress_url
       elif clipboard_url:
