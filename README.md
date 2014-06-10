@@ -36,7 +36,8 @@ sample ~/.screenshot/screenshot.ini config file
 <pre>
 [screenshot]
 use_clipboard = yes
-egress_url = http://screenshot.example.net//%((key)s
+egress_url = http://screenshot.example.net//%%(key)s
+clipboard_method = template
 
 [s3]
 enabled = yes
