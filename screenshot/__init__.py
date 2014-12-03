@@ -9,6 +9,7 @@ import urllib
 from screenshot.capture import MakeCapture
 from screenshot.clipboard import MakeClipboard
 from screenshot.upload import NullUpload
+from screenshot.upload.shell import ShellUpload
 
 try:
     from screenshot.upload.s3 import S3Upload
@@ -69,6 +70,7 @@ class Screenshot(object):
       self.s3_config = opts.s3_config
       self.tumblr_config = opts.tumblr_config
       self.imgur_config = opts.imgur_config
+      self.shell_config = opts.shell_config
       self.couchdb_config = opts.couchdb_config
       self.use_clipboard = opts.use_clipboard
       self.clipboard_method = opts.clipboard_method
@@ -125,6 +127,15 @@ class Screenshot(object):
       imgur = ImgurUpload(self.clipboard, self.imgur_config['client_id'], self.imgur_config['client_secret'])
       self.register_uploader(imgur, self.imgur_config)
 
+   def configure_shell(self):
+      if not self.shell_config or ShellUpload == NullUpload:
+         return
+      if self.shell_config.get('enabled') != True:
+         return
+
+      shell = ShellUpload(self.clipboard, self.shell_config['template'])
+      self.register_uploader(shell, self.shell_config)
+
    def configure_tumblr(self):
       if not self.tumblr_config or TumblrUpload == NullUpload:
          return
@@ -145,6 +156,7 @@ class Screenshot(object):
       self.configure_couchdb()
       self.configure_imgur()
       self.configure_tumblr()
+      self.configure_shell()
 
 
    def get_shot(self, shortname, summary):
@@ -189,6 +201,7 @@ class Screenshot(object):
 
       self.log.info("Uploading %s to %d places", filename, len(self.uploaders))
       for uploader_name, uploader in self.uploaders.iteritems():
+        print
         if isinstance(uploader, NullUpload):
             self.log.error("Support for %s is not available", uploader_name)
             continue
@@ -223,7 +236,6 @@ class Screenshot(object):
       if self.clipboard_method == 'tinurl':
             self.clipboard.copy(short_url)
       elif self.clipboard_method == 'template':
-
             self.clipboard.copy(egress_url)
             clipboard_url = egress_url
       elif clipboard_url:
