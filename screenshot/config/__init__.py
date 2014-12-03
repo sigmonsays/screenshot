@@ -26,18 +26,23 @@ def GetScreenshotOptions(configfile):
    config = SafeConfigParser()
    config.add_section('screenshot')
    config.set('screenshot', 'HOME', os.environ['HOME'])
+
    # Load default config
    config.readfp(StringIO(DEFAULT_CONFIG))
-   # If command line given
+
+   # if command line given
    if configfile:
       cfiles = config.read( [ configfile ] )
-   # load user config from $HOME/.screenshot/screenshot.conf
-   conffile = os.path.join(os.environ['HOME'], ".screenshot/screenshot.ini")
-   if os.path.exists(conffile):
-      cfiles = config.read([conffile])
       log.info("Loaded configuration %s" % (", ".join(cfiles)))
-   else:
-      log.warn("No configuration loaded, using defaults")
+
+   if len(cfiles) == 0:
+      # load user config from $HOME/.screenshot/screenshot.ini
+      conffile = os.path.join(os.environ['HOME'], ".screenshot/screenshot.ini")
+      if os.path.exists(conffile):
+         cfiles = config.read([conffile])
+         log.info("Loaded configuration %s" % (", ".join(cfiles)))
+      else:
+         log.warn("No configuration loaded, using defaults")
 
    opts.load_options(config)
 
@@ -78,13 +83,13 @@ class ScreenshotOptions(object):
         return uploader_config
 
     def load_options(self, config):
-
         self.couchdb_config = self.get_uploader_options(config, 'couchdb',  uri=str)
         self.disk_config    = self.get_uploader_options(config, 'disk',     save_dir=str)
         self.imgur_config   = self.get_uploader_options(config, 'imgur',    client_id=str, client_secret=str, title=str)
         self.s3_config      = self.get_uploader_options(config, 's3',       key=str, secret=str, bucket=str, end_point=str)
         self.tinyurl_config = self.get_uploader_options(config, 'tinyurl',  service=str, service_url=str)
         self.tumblr_config  = self.get_uploader_options(config, 'tumblr',   blog_url=str, consumer_key=str, consumer_secret=str, oauth_token=str, oauth_secret=str)
+        self.shell_config   = self.get_uploader_options(config, 'shell',    template=str)
 
         cfg = dict(config.items('screenshot'))
         self.capture_method = cfg.get('capture_method').lower()
