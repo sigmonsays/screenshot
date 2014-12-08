@@ -15,7 +15,7 @@ class ShellUpload(Upload):
          'shortname': shortname,
         }
         cmd = self.cmd_template % tmpl
-        self.log.debug("cmd %s", cmd)
+        self.log.info("cmd %s", cmd)
         os.system(cmd)
         return True
         

@@ -31,6 +31,7 @@ def GetScreenshotOptions(configfile):
    config.readfp(StringIO(DEFAULT_CONFIG))
 
    # if command line given
+   cfiles = []
    if configfile:
       cfiles = config.read( [ configfile ] )
       log.info("Loaded configuration %s" % (", ".join(cfiles)))
