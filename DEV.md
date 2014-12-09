@@ -4,19 +4,19 @@ development
 
 requirements
 
-- install python virtualenv 
+install python virtualenv 
 
       apt-get install -y python-virtualenv
 
-- setup a virtual environment
+setup a virtual environment
 
-   virtualenv venv
-   source venv/bin/activate
+      virtualenv venv
+      source venv/bin/activate
 
-- install dependencies
+install dependencies
 
-   python setup.py install
+      python setup.py install
 
-- to make code changes in the working directory 
+to make code changes in the working directory 
 
-   python setup.py develop
+      python setup.py develop
