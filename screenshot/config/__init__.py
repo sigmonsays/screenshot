@@ -21,7 +21,6 @@ def GetScreenshotOptions(configfile):
    log = logging.getLogger('')
    opts = ScreenshotOptions()
 
-
    # Load config
    config = SafeConfigParser()
    config.add_section('screenshot')
@@ -50,7 +49,6 @@ def GetScreenshotOptions(configfile):
    return opts
 
 class ScreenshotOptions(object):
-    
     def __init__(self):
         self.log = logging.getLogger(self.__class__.__name__)
         screenshot_dir = '/tmp/screenshots'
@@ -64,42 +62,21 @@ class ScreenshotOptions(object):
         clipboard_method = 'last'
         random_filename=True
         capture_method=None
+        filename_template = None
         warm_cache = True
         egress_url = None
+        self.uploaders = {}
         self.__dict__.update(locals())
 
-
-    def get_uploader_options(self, config, section, **params):
-        uploader_config = None
-        if config.has_section(section) and boolval(config.get(section, 'enabled')):
-           cfg = dict(config.items(section))
-           uploader_config = {}
-           uploader_config['enabled'] = True
-           uploader_config['active'] = boolval(cfg.get('active', True))
-           for k, v in params.iteritems():
-                uploader_config[k] = cfg.get(k)
-           self.log.info("%s is enabled", section)
-        else:
-           self.log.info("%s is disabled", section)
-        return uploader_config
+    def get_uploader_options(self, uploader):
+        ucfg = None
+        if self.optparse.has_section(uploader) and boolval(self.optparse.get(uploader, 'enabled')):
+           ucfg = dict(self.optparse.items(uploader))
+           self.log.debug("found options for %s uploader: %s", uploader, ucfg)
+           self.uploaders[uploader] = ucfg
+        return ucfg
 
     def load_options(self, config):
-        self.couchdb_config = self.get_uploader_options(config, 'couchdb',  uri=str)
-        self.disk_config    = self.get_uploader_options(config, 'disk',     save_dir=str)
-        self.imgur_config   = self.get_uploader_options(config, 'imgur',    client_id=str, client_secret=str, title=str)
-        self.s3_config      = self.get_uploader_options(config, 's3',       key=str, secret=str, bucket=str, end_point=str)
-        self.tinyurl_config = self.get_uploader_options(config, 'tinyurl',  service=str, service_url=str)
-        self.tumblr_config  = self.get_uploader_options(config, 'tumblr',   blog_url=str, consumer_key=str, consumer_secret=str, oauth_token=str, oauth_secret=str)
-        self.shell_config   = self.get_uploader_options(config, 'shell',    template=str)
-
-        cfg = dict(config.items('screenshot'))
-        self.capture_method = cfg.get('capture_method').lower()
-        self.egress_url = cfg.get('egress_url')
-        self.page_size = int(cfg.get('page_size'))
-        self.random_filename = boolval(cfg.get('random_filename'))
-        self.screenshot_dir = cfg.get('directory')
-        self.screenshot_index = cfg.get('index_file')
-        self.use_clipboard = boolval(cfg.get('use_clipboard'))
-        self.clipboard_method = cfg.get('clipboard_method')
-        self.warm_cache = boolval(cfg.get('warm_cache'))
-
+        self.cfg = dict(config.items('screenshot'))
+        self.optparse = config
+        self.__dict__.update(self.cfg)

@@ -1,30 +1,32 @@
+"""upload screenshots to s3"""
 import os
 import time
 from boto.s3.connection import S3Connection
 from boto.s3.key import Key
 
-from screenshot.upload import Upload
+from screenshot.upload import UploadPlugin
 
-class S3Upload(Upload):
-   upload_method = 's3'
-
-   def __init__(self, clipboard, key, secret, end_point, bucket_name):
-      Upload.__init__(self, clipboard)
-      self.log.debug("end_point %s bucket %s", end_point, bucket_name)
-      conn = S3Connection(aws_access_key_id=key, aws_secret_access_key=secret, host=end_point)
-      bucket = conn.get_bucket(bucket_name)
-      self.__dict__.update(locals())
-
+class S3(UploadPlugin):
    def upload(self, meta, localfile, shortname):
-      
-      ts = time.strftime("%F-%T", meta.now).replace(":", "-")
+      conn = S3Connection(
+         aws_access_key_id=self.config['key'],
+         aws_secret_access_key=self.config['secret'],
+         host=self.config['end_point']
+      )
+      bucket = conn.get_bucket(self.config['bucket'])
 
-      s3_key = os.path.join(ts.replace(":", "/").replace("-", "/"), shortname) + ".jpg"
-      s3_url = "http://%s.%s/%s" % (self.bucket_name, self.end_point, s3_key )
-      self.log.info("s3 url %s" %(s3_url))
+      timestamp = time.strftime("%F-%T", meta.now).replace(":", "-")
+
+      s3_key = os.path.join(timestamp.replace(":", "/").replace("-", "/"), shortname) + ".jpg"
+      s3_url = "http://%s.%s/%s" % (
+         self.config['bucket'],
+         self.config['end_point'],
+         s3_key
+      )
+      self.log.info("s3 url %s", s3_url)
       self.set_url(s3_url)
-      k = Key(self.bucket)
+      k = Key(bucket)
       k.key = s3_key
-      k.set_contents_from_filename(localfile, policy = 'public-read')
+      k.set_contents_from_filename(localfile, policy='public-read')
       return True
 
