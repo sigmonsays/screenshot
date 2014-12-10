@@ -1,46 +1,42 @@
-
+"""Tumbler uploader"""
 import pytumblr
 
-from screenshot.upload import Upload
+from screenshot.upload import UploadPlugin
 
-class TumblrUpload(Upload):
+class Tumblr(UploadPlugin):
 
-    verbose = False
-    upload_method = 'tumblr'
+   verbose = False
+   upload_method = 'tumblr'
 
-    def __init__(self, clipboard, blog_url, consumer_key, consumer_secret, oauth_token, oauth_secret):
-        Upload.__init__(self, clipboard)
-        cl = pytumblr.TumblrRestClient(
-            consumer_key,
-            consumer_secret,
-            oauth_token,
-            oauth_secret,
-        )
-        self.__dict__.update(locals())
+   def upload(self, meta, filename, shortname):
+      tumblr = pytumblr.TumblrRestClient(
+         self.config.tumblr_config['consumer_key'],
+         self.config.tumblr_config['consumer_secret'],
+         self.config.tumblr_config['oauth_token'],
+         self.config.tumblr_config['oauth_secret'],
+      )
+      tags = ["screenshot"]
 
-    def upload(self, meta, filename, shortname):
-        tags = ["screenshot"]
+      if self.verbose:
+         inf = tumblr.info()
+         self.log.debug("info %s", inf)
 
-        if self.verbose:
-            inf = self.cl.info()
-            self.log.debug("info %s", inf)
+      img_url = meta.get_url()
+      if meta.summary == None:
+         description = shortname
+      else:
+         description = meta.summary
 
-        img_url = meta.get_url()
-        if meta.summary == None:
-            description = shortname
-        else:
-            description = meta.summary
+      result = tumblr.create_photo(
+         self.config.tumblr_config['blog_url'],
+         state="published",
+         tags=tags,
+         slug=description,
+         caption=description,
+         link=img_url,
+         data=[filename],
+      )
 
-        result = self.cl.create_photo(self.blog_url,
-            state="published", 
-            tags=tags, 
-            slug=description, 
-            caption=description, 
-            link=img_url, 
-            data=[filename],
-        )
+      self.log.info("filename %s create_photo %s", filename, result)
 
-        self.log.info("filename %s create_photo %s", filename, result)
-
-        return True
-        
+      return True

@@ -1,19 +1,17 @@
+"""imgur screenshot saver"""
 from pyimgur import Imgur
 
-from screenshot.upload import Upload
+from screenshot.upload import UploadPlugin
 
-class ImgurUpload(Upload):
+class Imgur(UploadPlugin):
 
-    upload_method = 'imgur'
+   upload_method = 'imgur'
 
-    def __init__(self, clipboard, client_id, client_secret):
-        Upload.__init__(self, clipboard)
-        im = Imgur(client_id, client_secret)
-        self.im = im
-        self.__dict__.update(locals())
-
-    def upload(self, meta, filename, shortname):
-        result = self.im.upload_image(filename, title=shortname)
-        self.set_url('http://imgur.com/v/'+result.id)
-        return True
-        
+   def upload(self, meta, filename, shortname):
+      imgur = Imgur(
+         self.config.imgur_config['client_id'],
+         self.config.imgur_config['client_secret']
+      )
+      result = imgur.upload_image(filename, title=shortname)
+      self.set_url('http://imgur.com/v/'+result.id)
+      return True

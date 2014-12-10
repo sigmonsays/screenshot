@@ -16,7 +16,6 @@ def configure_logging(level):
    rootlog.setLevel(getattr(logging, level))
 
 class Application:
-
     def __init__(self):
        self.log = logging.getLogger(self.__class__.__name__)
 
@@ -44,17 +43,7 @@ class Application:
        for k, v in opts.__dict__.iteritems():
             self.log.debug("%s: %s", k, v)
 
-       # TODO: Do this in a more clean way...
-       for uploader in options.uploaders:
-           if hasattr(opts, uploader + "_config") == False:
-                self.log.warn("Invalid uploader %s", uploader)
-                continue
-           cfg = getattr(opts, uploader + "_config")
-           cfg['active']=True
-
        app = Screenshot(opts)
-
-       app.configure()
 
        shortname = None
        if len(args) > 0:
