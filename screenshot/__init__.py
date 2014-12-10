@@ -161,7 +161,7 @@ class Screenshot(object):
          clipboard_url = self.clipboard.get_url()
 
       if self.opts.warm_cache == True:
-         self.opts.warm_cache_url(clipboard_url)
+         self.warm_cache_url(clipboard_url)
 
       # trash original
       os.unlink(filename)
