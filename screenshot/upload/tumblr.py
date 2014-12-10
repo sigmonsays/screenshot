@@ -10,10 +10,10 @@ class Tumblr(UploadPlugin):
 
    def upload(self, meta, filename, shortname):
       tumblr = pytumblr.TumblrRestClient(
-         self.config.tumblr_config['consumer_key'],
-         self.config.tumblr_config['consumer_secret'],
-         self.config.tumblr_config['oauth_token'],
-         self.config.tumblr_config['oauth_secret'],
+         self.config['consumer_key'],
+         self.config['consumer_secret'],
+         self.config['oauth_token'],
+         self.config['oauth_secret'],
       )
       tags = ["screenshot"]
 
@@ -28,7 +28,7 @@ class Tumblr(UploadPlugin):
          description = meta.summary
 
       result = tumblr.create_photo(
-         self.config.tumblr_config['blog_url'],
+         self.config['blog_url'],
          state="published",
          tags=tags,
          slug=description,

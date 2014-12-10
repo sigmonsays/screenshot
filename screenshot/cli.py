@@ -50,7 +50,7 @@ class Application:
         shortname = args[0]
        summary = options.summary
        opts.summary = options.summary
-       opts.uploaders = options.uploaders
+       #opts.uploaders = options.uploaders
 
         
        app.take_screenshot(shortname, summary)

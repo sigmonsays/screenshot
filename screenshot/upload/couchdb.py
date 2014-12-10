@@ -23,7 +23,7 @@ class Couchdb(UploadPlugin):
 
    def save_couchdb(self, timestamp, filename, shortname, s3_url=None, s3_key=None):
       """Handle the actual save to a couchdb record"""
-      scheme, netloc, path, _, _ = urlparse.urlsplit(self.config.couchdb_config['uri'])
+      scheme, netloc, path, _, _ = urlparse.urlsplit(self.config['uri'])
       couch_key = os.path.join(timestamp.replace(":", "-").replace("-", "-"), shortname) + ".jpg"
       self.log.info("Saving record in couchdb at %s", couch_key)
 

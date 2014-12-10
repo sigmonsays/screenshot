@@ -9,8 +9,8 @@ class Imgur(UploadPlugin):
 
    def upload(self, meta, filename, shortname):
       imgur = Imgur(
-         self.config.imgur_config['client_id'],
-         self.config.imgur_config['client_secret']
+         self.config['client_id'],
+         self.config['client_secret']
       )
       result = imgur.upload_image(filename, title=shortname)
       self.set_url('http://imgur.com/v/'+result.id)

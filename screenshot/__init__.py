@@ -11,7 +11,8 @@ import pdb
 from screenshot.capture import MakeCapture
 from screenshot.clipboard import MakeClipboard
 
-from screenshot.upload import *
+# We use this wildcard import to autoload plugins.  FIXME: find a better way
+from screenshot.upload import * # pylint: disable=wildcard-import
 from screenshot.tinyurl import MakeTinyUrl
 
 class ShotMetadata(object):
@@ -51,18 +52,19 @@ class Screenshot(object):
       self.tiny = MakeTinyUrl(opts.tinyurl_config)
       self.capture = MakeCapture()
       self.clipboard = MakeClipboard()
-      self.ConfigureUploaders()
-      pdb.set_trace()
+      self.configure_uploaders()
 
-   def ConfigureUploaders(self):
+      self.log.debug("uploader options %s", self.opts.uploaders)
+
+   def configure_uploaders(self):
       self.uploaders = {}
       for name, cls in UPLOAD_PLUGINS:
          self.log.debug("Checking available plugin %s", name)
-         uopts = self.opts.get_uploader_options(name.lower())
+         uopts = self.opts.get_uploader_options(name)
          # We wont get options if its either disabled or doesn't exist
          if uopts:
             self.log.info("Loading configured plugin %s", name)
-            self.uploaders[name]=cls(
+            self.uploaders[name] = cls(
                uopts,
                self.opts,
                self.clipboard,
@@ -90,11 +92,13 @@ class Screenshot(object):
       return meta
 
    def take_screenshot(self, shortname=None, summary=None):
+      self.log.debug("uploader options %s", self.opts.uploaders)
       meta = self.get_shot(shortname, summary)
 
       filename = meta.get_filename()
       dirpath = os.path.dirname(filename)
-      if not os.path.exists(dirpath): os.makedirs(dirpath)
+      if not os.path.exists(dirpath):
+         os.makedirs(dirpath)
 
       tmpl = {
          'basename'  : os.path.basename(filename),
@@ -115,9 +119,9 @@ class Screenshot(object):
 
       self.log.info("Uploading %s to %d places", filename, len(self.uploaders))
       for uploader_name, uploader in self.uploaders.iteritems():
-         pdb.set_trace()
+         self.log.debug("uploader options %s", self.opts.uploaders)
          ucfg = self.opts.uploaders[uploader_name]
-         if 'active' in ucfg and ucfg['active']  == False:
+         if 'active' in ucfg and ucfg['active'] == False:
             self.log.debug("Skipping %s due to active=False", uploader_name)
             continue
 
@@ -128,7 +132,7 @@ class Screenshot(object):
             continue
 
          # Decide if we should clipboard the url or not
-         if self.opts.clipboard_method == uploader.upload_method:
+         if self.opts.clipboard_method == uploader_name:
             if uploader.url:
                self.log.debug("added uploader url to the clipboard url list")
                self.clipboard.add_url(uploader.url)
@@ -169,15 +173,16 @@ class Screenshot(object):
       os.unlink(filename)
 
    def warm_cache_url(self, url):
-      f = None
+      """Warm up a configured cache by fetching the url"""
+      fetch = None
       self.log.info("warm cache url %s", url)
       try:
-         f = urllib.urlopen(url)
-      except Exception, e:
+         fetch = urllib.urlopen(url)
+      except Exception, e: # pylint: disable=broad-except
          self.log.error("%s", e)
          return
 
-      content = f.read()
+      content = fetch.read()
       self.log.info("read %d bytes from %s", len(content), url)
       return
 

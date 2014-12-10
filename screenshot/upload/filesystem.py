@@ -13,8 +13,8 @@ class Disk(UploadPlugin):
 
       for i in xrange(1000):
          saved_name = os.path.join(
-            os.path.expanduser(self.config.disk_config['save_dir']),
-            basename + i
+            os.path.expanduser(self.config['save_dir']),
+            basename + str(i)
          )
          if os.path.exists(saved_name) == False:
             break

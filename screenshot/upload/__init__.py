@@ -14,7 +14,7 @@ class UploadPlugin(object):
    class __metaclass__(type):
       def __init__(cls, name, base, attrs):
          if name != "UploadPlugin":
-            UPLOAD_PLUGINS.append((name, cls))
+            UPLOAD_PLUGINS.append((name.lower(), cls))
 
    upload_method = None
 
