@@ -47,3 +47,7 @@ bucket = XXXXXXXXXX
 </pre>
 
 
+Development
+--------------------
+For development see DEV.md
+

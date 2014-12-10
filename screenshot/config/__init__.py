@@ -25,18 +25,24 @@ def GetScreenshotOptions(configfile):
    config = SafeConfigParser()
    config.add_section('screenshot')
    config.set('screenshot', 'HOME', os.environ['HOME'])
+
    # Load default config
    config.readfp(StringIO(DEFAULT_CONFIG))
-   # If command line given
+
+   # if command line given
+   cfiles = []
    if configfile:
       cfiles = config.read( [ configfile ] )
-   # load user config from $HOME/.screenshot/screenshot.conf
-   conffile = os.path.join(os.environ['HOME'], ".screenshot/screenshot.ini")
-   if os.path.exists(conffile):
-      cfiles = config.read([conffile])
       log.info("Loaded configuration %s" % (", ".join(cfiles)))
-   else:
-      log.warn("No configuration loaded, using defaults")
+
+   if len(cfiles) == 0:
+      # load user config from $HOME/.screenshot/screenshot.ini
+      conffile = os.path.join(os.environ['HOME'], ".screenshot/screenshot.ini")
+      if os.path.exists(conffile):
+         cfiles = config.read([conffile])
+         log.info("Loaded configuration %s" % (", ".join(cfiles)))
+      else:
+         log.warn("No configuration loaded, using defaults")
 
    opts.load_options(config)
 

@@ -149,7 +149,6 @@ class Screenshot(object):
       if self.opts.clipboard_method == 'tinurl':
          self.clipboard.copy(short_url)
       elif self.opts.clipboard_method == 'template':
-
          self.clipboard.copy(egress_url)
          clipboard_url = egress_url
       elif clipboard_url:
