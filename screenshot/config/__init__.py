@@ -79,4 +79,8 @@ class ScreenshotOptions(object):
     def load_options(self, config):
         self.cfg = dict(config.items('screenshot'))
         self.optparse = config
+        for option in ('random_filename', 'use_clipboard', 'warm_cache'):
+            self.cfg[option] = boolval(self.cfg['option'])
+        for option in ('page_size'):
+            self.cfg[option] = int(self.cfg['option'])
         self.__dict__.update(self.cfg)
