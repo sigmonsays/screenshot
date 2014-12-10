@@ -1,5 +1,8 @@
 The goal of this program is to store screenshots on s3 (and others) as simple as possible.
 
+
+[![Build Status](https://travis-ci.org/sigmonsays/screenshot.svg?branch=master)](https://travis-ci.org/sigmonsays/screenshot)
+
 Features
 --------------------
 - supported on linux and Mac OSX
