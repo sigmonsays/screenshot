@@ -174,15 +174,15 @@ class Screenshot(object):
 
    def warm_cache_url(self, url):
       """Warm up a configured cache by fetching the url"""
-      fetch = None
+      f = None
       self.log.info("warm cache url %s", url)
       try:
-         fetch = urllib.urlopen(url)
+         f = urllib.urlopen(url)
       except Exception, e: # pylint: disable=broad-except
          self.log.error("%s", e)
          return
 
-      content = fetch.read()
+      content = f.read()
       self.log.info("read %d bytes from %s", len(content), url)
       return
 
