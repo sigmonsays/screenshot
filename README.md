@@ -8,7 +8,7 @@ Features
 - supported on linux and Mac OSX
 - capture screenshots
 - send screenshot images to various backends
-- supports uploading images to s3, couchdb, tumblr and imgur
+- supports uploading images to s3, couchdb, tumblr and more
 - automatically copies selected url to clipboard
 - integrate with a variety of url shortening services, ie tinyurl
 - build a static HTML image calendar for archival purposes (s3 only)
@@ -20,6 +20,7 @@ For uploading images
 - couchdb has no requirements
 - tumblr requires pytumblr
 - imgur requires pyimgur
+- dropbox requires dropbox
 
 For clipboard support
 - xclip command line 
