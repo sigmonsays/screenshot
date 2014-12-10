@@ -5,7 +5,16 @@ Base object for importing plugins and registering them all
 """
 import logging
 
-__all__ = ['couchdb', 'filesystem', 'imgur', 'null', 's3', 'tumblr', 'UPLOAD_PLUGINS']
+__all__ = [
+   'couchdb',
+   'filesystem',
+   'imgur',
+   'null',
+   's3',
+   'tumblr',
+   'dropbox',
+   'UPLOAD_PLUGINS',
+]
 
 UPLOAD_PLUGINS = []
 
