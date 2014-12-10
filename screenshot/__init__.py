@@ -6,7 +6,6 @@ import random
 import string
 import time
 import urllib
-import pdb
 
 from screenshot.capture import MakeCapture
 from screenshot.clipboard import MakeClipboard
@@ -54,8 +53,6 @@ class Screenshot(object):
       self.clipboard = MakeClipboard()
       self.configure_uploaders()
 
-      self.log.debug("uploader options %s", self.opts.uploaders)
-
    def configure_uploaders(self):
       self.uploaders = {}
       for name, cls in UPLOAD_PLUGINS:
@@ -92,7 +89,6 @@ class Screenshot(object):
       return meta
 
    def take_screenshot(self, shortname=None, summary=None):
-      self.log.debug("uploader options %s", self.opts.uploaders)
       meta = self.get_shot(shortname, summary)
 
       filename = meta.get_filename()
@@ -119,7 +115,6 @@ class Screenshot(object):
 
       self.log.info("Uploading %s to %d places", filename, len(self.uploaders))
       for uploader_name, uploader in self.uploaders.iteritems():
-         self.log.debug("uploader options %s", self.opts.uploaders)
          ucfg = self.opts.uploaders[uploader_name]
          if 'active' in ucfg and ucfg['active'] == False:
             self.log.debug("Skipping %s due to active=False", uploader_name)
