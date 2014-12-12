@@ -10,12 +10,17 @@ class Disk(UploadPlugin):
 
    def upload(self, meta, localfile, shortname):
       basename = os.path.basename(localfile)
+      bname, ext = os.path.splitext(basename)
 
-      for i in xrange(1000):
-         saved_name = os.path.join(
-            os.path.expanduser(self.config['save_dir']),
-            basename + str(i)
-         )
+      for i in xrange(100):
+
+         if i == 0:
+            saved_name = localfile
+         else:
+            saved_name = os.path.join(
+               os.path.expanduser(self.config['save_dir']),
+               bname + "-" + str(i) + ext
+            )
          if os.path.exists(saved_name) == False:
             break
 
