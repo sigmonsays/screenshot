@@ -7,7 +7,10 @@ and https://www.dropbox.com/developers/apps
 """
 
 from screenshot.upload import UploadPlugin
-dropbox = __import__("dropbox")
+try:
+   dropbox = __import__("dropbox")
+except:
+   dropbox = None
 
 class Dropbox(UploadPlugin):
 

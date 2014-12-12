@@ -1,5 +1,8 @@
 """imgur screenshot saver"""
-from pyimgur import Imgur
+try:
+   from pyimgur import Imgur
+except:
+   Imgur = None
 
 from screenshot.upload import UploadPlugin
 

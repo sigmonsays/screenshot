@@ -1,8 +1,12 @@
 """upload screenshots to s3"""
 import os
 import time
-from boto.s3.connection import S3Connection
-from boto.s3.key import Key
+try:
+   from boto.s3.connection import S3Connection
+   from boto.s3.key import Key
+except:
+   S3Connection = None
+   Key = None
 
 from screenshot.upload import UploadPlugin
 

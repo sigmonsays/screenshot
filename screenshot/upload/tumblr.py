@@ -1,5 +1,8 @@
 """Tumbler uploader"""
-import pytumblr
+try:
+   import pytumblr
+except:
+   pytumblr = None
 
 from screenshot.upload import UploadPlugin
 
