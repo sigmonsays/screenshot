@@ -97,7 +97,4 @@ class LOCS(UploadPlugin):
           self.log.warn("bad http response code: %s", http_status)
           return False
 
-      print r
-      print r.status_code, r.headers
-
       return True
