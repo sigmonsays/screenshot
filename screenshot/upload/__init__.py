@@ -13,6 +13,7 @@ __all__ = [
    's3',
    'tumblr',
    'dropbox',
+   'locs',
    'UPLOAD_PLUGINS',
 ]
 

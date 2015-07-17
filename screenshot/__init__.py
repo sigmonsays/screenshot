@@ -144,9 +144,11 @@ class Screenshot(object):
       if short_url:
          self.clipboard.add_url(short_url)
 
-      self.log.debug("clipboard method %s", self.opts.clipboard_method)
+      self.log.debug("use clipboard %s: clipboard method %s", self.opts.use_clipboard, self.opts.clipboard_method)
 
-      if self.opts.clipboard_method == 'tinurl':
+      if self.opts.use_clipboard == False:
+         clipboard_url = None
+      elif self.opts.clipboard_method == 'tinurl':
          self.clipboard.copy(short_url)
       elif self.opts.clipboard_method == 'template':
          self.clipboard.copy(egress_url)
@@ -160,7 +162,7 @@ class Screenshot(object):
          self.log.error("Invalid clipboard method %s", self.opts.clipboard_method)
          clipboard_url = self.clipboard.get_url()
 
-      if self.opts.warm_cache == True:
+      if clipboard_url and self.opts.warm_cache == True:
          self.warm_cache_url(clipboard_url)
 
       # trash original
