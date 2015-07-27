@@ -7,7 +7,7 @@ class Shell(UploadPlugin):
          'filename': filename,
          'shortname': shortname,
         }
-        cmd = self.cfg['cmd_template'] % tmpl
+        cmd = self.config['template'] % tmpl
         self.log.info("cmd %s", cmd)
         os.system(cmd)
         return True

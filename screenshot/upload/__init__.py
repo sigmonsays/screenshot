@@ -14,6 +14,7 @@ __all__ = [
    'tumblr',
    'dropbox',
    'locs',
+   'shell',
    'UPLOAD_PLUGINS',
 ]
 
@@ -25,6 +26,7 @@ class UploadPlugin(object):
       def __init__(cls, name, base, attrs):
          if name != "UploadPlugin":
             UPLOAD_PLUGINS.append((name.lower(), cls))
+            logging.info("registering upload plugin %s", name.lower())
 
    upload_method = None
 
