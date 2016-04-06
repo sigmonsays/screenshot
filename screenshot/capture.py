@@ -20,10 +20,19 @@ class CaptureDetect:
 
 
 class CaptureBuilder:
-    def __init__(self):
+    def __init__(self, capture_method=None):
+        self.__dict__.update(locals())
         self.log = logging.getLogger(self.__class__.__name__)
 
     def build(self):
+        if self.capture_method != None:
+            self.log.info("using user defined capture method %s", self.capture_method)
+            capture_method = CaptureMethods.get(self.capture_method)
+            if capture_method == None:
+                self.warn("user defined capture method not found: %s, proceeding to auto detect", self.capture_method)
+            else:
+                return capture_method()
+
         detect = CaptureDetect()
         methods = detect.detect_capture_methods()
         if len(methods) == 0:
@@ -36,8 +45,8 @@ class CaptureBuilder:
 
         return klass()
 
-def MakeCapture():
-    return CaptureBuilder().build()
+def MakeCapture(capture_method=None):
+    return CaptureBuilder(capture_method).build()
 
 class CaptureMethod:
     def __init__(self):

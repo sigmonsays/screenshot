@@ -47,9 +47,13 @@ class Screenshot(object):
       self.opts = opts
       self.log.debug("screenshot plugins %s", UPLOAD_PLUGINS)
 
+      capture_opts = {}
+      if self.opts.capture_method != None:
+          capture_opts['capture_method'] = self.opts.capture_method
+
       self.platform = platform.system()
       self.tiny = MakeTinyUrl(opts.tinyurl_config)
-      self.capture = MakeCapture()
+      self.capture = MakeCapture(**capture_opts)
       self.clipboard = MakeClipboard()
       self.configure_uploaders()
 
