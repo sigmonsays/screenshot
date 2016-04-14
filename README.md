@@ -51,6 +51,15 @@ bucket = XXXXXXXXXX
 </pre>
 
 
+
+custom screenshot commands on linux
+
+- imagemagick - import command
+- gnome - gnome screenshot command
+- emprint - https://git.enlightenment.org/apps/emprint.git
+- scrot - http://freshmeat.net/projects/scrot
+
+
 Development
 --------------------
 For development see DEV.md
