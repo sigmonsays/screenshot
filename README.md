@@ -24,7 +24,13 @@ For uploading images
 
 For clipboard support
 - xclip command line 
-- image magick for the import command
+
+screenshot commands on linux
+
+- import - part of imagemagick
+- gnome-screenshot - gnome screenshot command
+- emprint - https://git.enlightenment.org/apps/emprint.git
+- scrot - http://freshmeat.net/projects/scrot
 
 
 Install on ubuntu lucid
@@ -52,12 +58,6 @@ bucket = XXXXXXXXXX
 
 
 
-custom screenshot commands on linux
-
-- import - part of imagemagick
-- gnome-screenshot - gnome screenshot command
-- emprint - https://git.enlightenment.org/apps/emprint.git
-- scrot - http://freshmeat.net/projects/scrot
 
 
 Development
