@@ -62,6 +62,7 @@ class ScreenshotOptions(object):
         clipboard_method = 'last'
         random_filename=True
         capture_method=None
+        capture_command=None
         filename_template = None
         warm_cache = True
         egress_url = None

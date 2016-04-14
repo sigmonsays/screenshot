@@ -28,9 +28,13 @@ clipboard_method = last
 # - gnome - use gnome-screenshot -a -f FILE
 # - auto - detect automatically based on platform
 # - screencapture - for MacOSX
+# - custom - use custom command (see capture_command)
 # capture_method = gnome
 
 capture_method = auto
+
+# if capture_method = custom
+capture_command = capture-script.sh
 
 random_filename = no
 

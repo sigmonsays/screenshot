@@ -20,7 +20,7 @@ class CaptureDetect:
 
 
 class CaptureBuilder:
-    def __init__(self, capture_method=None):
+    def __init__(self, capture_method=None, capture_command=None):
         self.__dict__.update(locals())
         self.log = logging.getLogger(self.__class__.__name__)
 
@@ -30,6 +30,9 @@ class CaptureBuilder:
             capture_method = CaptureMethods.get(self.capture_method)
             if capture_method == None:
                 self.warn("user defined capture method not found: %s, proceeding to auto detect", self.capture_method)
+            elif capture_method == CustomCapture:
+                return capture_method(self.capture_command)
+
             else:
                 return capture_method()
 
@@ -45,8 +48,8 @@ class CaptureBuilder:
 
         return klass()
 
-def MakeCapture(capture_method=None):
-    return CaptureBuilder(capture_method).build()
+def MakeCapture(**opts):
+    return CaptureBuilder(**opts).build()
 
 class CaptureMethod:
     def __init__(self):
@@ -79,9 +82,15 @@ class Gnome(ShellCapture):
 class DarwinScreenCapture(ShellCapture):
     cmd = "screencapture -s"
 
+class CustomCapture(ShellCapture):
+    def __init__(self, cmd):
+        self.log = logging.getLogger(self.__class__.__name__)
+        self.cmd = cmd
+
 CaptureMethods = {
     'imagemagick': ImageMagick,
     'null': NullCapture,
     'gnome': Gnome,
     'screencapture': DarwinScreenCapture,
+    'custom': CustomCapture,
 }

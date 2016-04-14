@@ -6,7 +6,7 @@ The goal of this program is to store screenshots on s3 (and others) as simple as
 Features
 --------------------
 - supported on linux and Mac OSX
-- capture screenshots
+- capture screenshots using various utilities or custom command
 - send screenshot images to various backends
 - supports uploading images to s3, couchdb, tumblr and more
 - automatically copies selected url to clipboard

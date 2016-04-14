@@ -50,6 +50,8 @@ class Screenshot(object):
       capture_opts = {}
       if self.opts.capture_method != None:
           capture_opts['capture_method'] = self.opts.capture_method
+          if self.opts.capture_method == 'custom':
+            capture_opts['capture_command'] = self.opts.capture_command
 
       self.platform = platform.system()
       self.tiny = MakeTinyUrl(opts.tinyurl_config)
