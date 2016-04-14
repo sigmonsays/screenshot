@@ -54,8 +54,8 @@ bucket = XXXXXXXXXX
 
 custom screenshot commands on linux
 
-- imagemagick - import command
-- gnome - gnome screenshot command
+- import - part of imagemagick
+- gnome-screenshot - gnome screenshot command
 - emprint - https://git.enlightenment.org/apps/emprint.git
 - scrot - http://freshmeat.net/projects/scrot
 
