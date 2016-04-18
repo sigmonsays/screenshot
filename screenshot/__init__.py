@@ -94,6 +94,24 @@ class Screenshot(object):
       self.log.debug("return %s", meta)
       return meta
 
+  
+   def download_url(self, url, filename):
+      f = None
+      self.log.info("download url %s", url)
+      try:
+         f = urllib.urlopen(url)
+      except Exception, e: # pylint: disable=broad-except
+         self.log.error("%s", e)
+         return
+
+      out = open(filename, 'w+')
+      while True:
+          content = f.read(4096)
+          if content == '':
+              break
+          out.write(content)
+      out.close()
+
    def take_screenshot(self, shortname=None, summary=None):
       meta = self.get_shot(shortname, summary)
 
@@ -114,10 +132,22 @@ class Screenshot(object):
       egress_url = self.opts.egress_url % tmpl
       meta.url = egress_url
 
-      result = self.capture.capture(filename)
-      if result != True:
-         self.log.error("Capturing screenshot failed, result %s", result)
-         return
+      if self.opts.filename == None:
+          # No filename given to use as the screenshot so we capture one ourselves
+          result = self.capture.capture(filename)
+          if result != True:
+             self.log.error("Capturing screenshot failed, result %s", result)
+             return
+
+      else:
+          # filename given, dont capture anything
+          self.log.debug("using provided file %s as screenshot", self.opts.filename)
+
+          # support downloading http urls
+          if self.opts.filename.startswith('http'):
+              self.download_url(self.opts.filename, filename)
+          else:
+              filename = self.opts.filename
 
       self.log.info("Uploading %s to %d places", filename, len(self.uploaders))
       for uploader_name, uploader in self.uploaders.iteritems():

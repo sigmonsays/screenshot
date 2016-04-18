@@ -27,6 +27,7 @@ class Application:
        parser.add_option("-l", "--log-level", dest="log_level", default='info', help="set logging level [%default]")
        parser.add_option("-s", "--summary", dest="summary", default=None, help="optional summary of picture")
        parser.add_option("-u", "--uploaders", dest="uploaders", default=[], action="append", help="enable specific uploaders")
+       parser.add_option("-f", "--filename", dest="filename", default=None, help="use this file (or http address) instead of capturing")
        parser = parser
 
        (options, args) = parser.parse_args()
@@ -43,6 +44,7 @@ class Application:
        for k, v in opts.__dict__.iteritems():
             self.log.debug("%s: %s", k, v)
 
+       opts.filename = options.filename
        app = Screenshot(opts)
 
        shortname = None

@@ -66,7 +66,8 @@ class ScreenshotOptions(object):
         filename_template = None
         warm_cache = True
         egress_url = None
-        self.uploaders = {}
+        uploaders = {}
+        filename = None
         self.__dict__.update(locals())
 
     def get_uploader_options(self, uploader):
