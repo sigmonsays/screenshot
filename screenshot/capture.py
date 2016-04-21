@@ -29,7 +29,7 @@ class CaptureBuilder:
             self.log.info("using user defined capture method %s", self.capture_method)
             capture_method = CaptureMethods.get(self.capture_method)
             if capture_method == None:
-                self.warn("user defined capture method not found: %s, proceeding to auto detect", self.capture_method)
+                self.log.warn("user defined capture method not found: %s, proceeding to auto detect", self.capture_method)
             elif capture_method == CustomCapture:
                 return capture_method(self.capture_command)
 
