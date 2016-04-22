@@ -131,6 +131,7 @@ class Screenshot(object):
       tmpl.update(meta.to_dict())
       egress_url = self.opts.egress_url % tmpl
       meta.url = egress_url
+      delete_original = True
 
       if self.opts.filename == None:
           # No filename given to use as the screenshot so we capture one ourselves
@@ -142,6 +143,7 @@ class Screenshot(object):
       else:
           # filename given, dont capture anything
           self.log.debug("using provided file %s as screenshot", self.opts.filename)
+          delete_original = False
 
           # support downloading http urls
           if self.opts.filename.startswith('http'):
@@ -201,8 +203,9 @@ class Screenshot(object):
       if clipboard_url and self.opts.warm_cache == True:
          self.warm_cache_url(clipboard_url)
 
-      # trash original
-      os.unlink(filename)
+      if delete_original:
+          self.log.debug("deleting %s", filename)
+          os.unlink(filename)
 
    def warm_cache_url(self, url):
       """Warm up a configured cache by fetching the url"""
