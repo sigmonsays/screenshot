@@ -14,7 +14,7 @@ class Couchdb(UploadPlugin):
    """Store screenshots in couchdb"""
    upload_method = 'couchdb'
 
-   def upload(self, meta, filename, shortname):
+   def upload(self, meta, filename, shortname, md):
       timestamp = time.strftime("%F-%T", meta.now).replace(":", "-")
       ret = self.save_couchdb(timestamp, filename, shortname)
       if ret == None:

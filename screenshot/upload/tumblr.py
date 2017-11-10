@@ -11,7 +11,7 @@ class Tumblr(UploadPlugin):
    verbose = False
    upload_method = 'tumblr'
 
-   def upload(self, meta, filename, shortname):
+   def upload(self, meta, filename, shortname, md):
       tumblr = pytumblr.TumblrRestClient(
          self.config['consumer_key'],
          self.config['consumer_secret'],

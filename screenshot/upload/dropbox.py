@@ -25,7 +25,7 @@ class Dropbox(UploadPlugin):
       return client
 
 
-   def upload(self, meta, localfile, shortname):
+   def upload(self, meta, localfile, shortname, md):
       self.log.info("%s shortname %s", localfile, shortname)
       self.log.debug("config %s", self.config)
 

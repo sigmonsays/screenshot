@@ -8,7 +8,7 @@ class Disk(UploadPlugin):
 
    upload_method = 'filesystem'
 
-   def upload(self, meta, localfile, shortname):
+   def upload(self, meta, localfile, shortname, md):
       basename = os.path.basename(localfile)
       bname, ext = os.path.splitext(basename)
 

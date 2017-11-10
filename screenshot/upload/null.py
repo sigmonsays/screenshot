@@ -2,6 +2,6 @@
 from screenshot.upload import UploadPlugin
 
 class Null(UploadPlugin):
-   def upload(self, meta, localfile, shortname):
+   def upload(self, meta, localfile, shortname, md):
       self.log.info("%s shortname %s", localfile, shortname)
       return True

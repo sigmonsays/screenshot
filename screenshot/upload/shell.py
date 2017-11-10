@@ -2,7 +2,7 @@ import os
 from screenshot.upload import UploadPlugin
 
 class Shell(UploadPlugin):
-    def upload(self, meta, filename, shortname):
+    def upload(self, meta, filename, shortname, md):
         tmpl = {
          'filename': filename,
          'shortname': shortname,

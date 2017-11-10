@@ -159,7 +159,7 @@ class Screenshot(object):
             continue
 
          self.log.debug("%s Uploading %s", uploader.__class__.__name__, filename)
-         result = uploader.upload(meta, filename, meta.shortname)
+         result = uploader.upload(meta, filename, meta.shortname, meta)
          if result != True:
             self.log.warn("Uploading to %s failed: result %s", uploader.__class__.__name__, result)
             continue

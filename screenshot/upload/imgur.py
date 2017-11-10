@@ -10,7 +10,7 @@ class Imgur(UploadPlugin):
 
    upload_method = 'imgur'
 
-   def upload(self, meta, filename, shortname):
+   def upload(self, meta, filename, shortname, md):
       imgur = Imgur(
          self.config['client_id'],
          self.config['client_secret']
