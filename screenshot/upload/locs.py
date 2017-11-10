@@ -56,7 +56,8 @@ class HmacAuth:
 class LOCS(UploadPlugin):
 
 
-   def upload(self, meta, localfile, shortname):
+   def upload(self, meta, localfile, shortname, md):
+      self.log.debug("metadata %s", md)
       server = self.config.get('server', 'global.llp.lldns.net')
       url = 'http://%s/post/raw' % (server)
 
@@ -73,18 +74,21 @@ class LOCS(UploadPlugin):
            return None
 
       # begin uploading..
-      self.log.info("%s shortname %s", localfile, shortname)
+      self.log.info("localfile:%s shortname:%s", localfile, shortname)
+      basename = "%s-%s.jpg" % (md.shortname, md.timestamp)
 
       st = os.stat(localfile)
 
       auth = HmacAuth(access_key, secret_key)
       request_headers = {
               'Content-Length': str(st.st_size),
+              'X-Agile-Recursive': 'true',
               'X-Agile-Directory': '/screenshot',
-              'X-Agile-Basename': shortname,
+              'X-Agile-Basename': basename,
       }
       #              'X-Agile-Recursive': 'true',
       request_headers['X-Agile-Signature']=auth.signature(request_headers)
+      self.log.debug("request headers %s", request_headers)
 
       fh = file(localfile)
 
