@@ -11,7 +11,7 @@ except:
 from screenshot.upload import UploadPlugin
 
 class S3(UploadPlugin):
-   def upload(self, meta, localfile, shortname):
+   def upload(self, meta, localfile, shortname, md):
       conn = S3Connection(
          aws_access_key_id=self.config['key'],
          aws_secret_access_key=self.config['secret'],
