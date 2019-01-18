@@ -1,5 +1,4 @@
-Configuration Parameters
-============================
+# Configuration Parameters
 
 | Directive                     | Default Value                             | Description                                                                  |
 | ---                           | ---                                       | ---                                                                          |
@@ -31,21 +30,20 @@ Configuration Parameters
 
 Notes
 
-screenshot.clipboard_method method can be 
+`screenshot.clipboard_method` method can be 
  - [backend] - a storage backend, like s3, couchdb, imgur, etc
  - tinyurl - from a url service, like tinyurl
  - template - from egress_url template
  - last - select the last image
 
-screenshot.capture_method can be 
+`screenshot.capture_method` can be 
  - imagemagick - use "import" command
  - gnome - use gnome-screenshot -a -f FILE
  - auto - detect automatically based on platform
  - screencapture - for MacOSX
 
 
-Default Configuration
-============================
+# Default Configuration
 
 <pre>
 
