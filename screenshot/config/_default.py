@@ -2,6 +2,9 @@
 DEFAULT_CONFIG = """
 
 [screenshot]
+# Default log level is INFO
+log_level = info
+
 # Override what FQDN is use (for a reverse proxy if setup)
 egress_url = http://example.net/%%s
 

@@ -51,6 +51,7 @@ def GetScreenshotOptions(configfile):
 class ScreenshotOptions(object):
     def __init__(self):
         self.log = logging.getLogger(self.__class__.__name__)
+        log_level = 'info'
         screenshot_dir = '/tmp/screenshots'
         screenshot_index = 'tmp/screenshots.index'
         disk_config = None

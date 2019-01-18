@@ -24,7 +24,7 @@ class Application:
        parser = OptionParser()
        parser.add_option("-c", "--config", dest="config", help="config file", metavar="FILE", default=None)
        parser.add_option("-v", "--verbose", dest="verbose", action="store_true", default=False)
-       parser.add_option("-l", "--log-level", dest="log_level", default='info', help="set logging level [%default]")
+       parser.add_option("-l", "--log-level", dest="log_level", default='', help="set logging level [%default]")
        parser.add_option("-s", "--summary", dest="summary", default=None, help="optional summary of picture")
        parser.add_option("-u", "--uploaders", dest="uploaders", default=[], action="append", help="enable specific uploaders")
        parser.add_option("-f", "--filename", dest="filename", default=None, help="use this file (or http address) instead of capturing")
@@ -32,7 +32,8 @@ class Application:
 
        (options, args) = parser.parse_args()
 
-       configure_logging(options.log_level)
+       if options.log_level != '':
+            configure_logging(options.log_level)
 
        # Mute boto unless we're verbose
        if options.verbose == False:
@@ -45,7 +46,7 @@ class Application:
             self.log.debug("%s: %s", k, v)
 
        opts.filename = options.filename
-       app = Screenshot(opts)
+       app = Screenshot(opts, configure_logging)
 
        shortname = None
        if len(args) > 0:

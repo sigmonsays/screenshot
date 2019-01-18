@@ -41,7 +41,9 @@ sudo apt-get install python-boto xclip imagemagick
 
 Configuration
 --------------------
-sample ~/.screenshot/screenshot.ini config file
+sample ~/.screenshot/screenshot.ini config file, detailed explanation of configuration directives are in [CONFIG.md](CONFIG.md)
+
+Quick example
 
 <pre>
 [screenshot]

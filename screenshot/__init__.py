@@ -42,9 +42,11 @@ class ShotMetadata(object):
 
 class Screenshot(object):
    """Does sweet stuff"""
-   def __init__(self, opts):
+   def __init__(self, opts, configure_logging):
       self.log = logging.getLogger(self.__class__.__name__)
       self.opts = opts
+      self.configure_logging = configure_logging
+      configure_logging(opts.log_level)
       self.log.debug("screenshot plugins %s", UPLOAD_PLUGINS)
 
       capture_opts = {}
