@@ -37,6 +37,8 @@ class ShotMetadata(object):
       for k, v in i:
           if k == 'self' or k.startswith('_') or k in skip:
             continue
+          if v == None:
+            continue
           if k == 'now':
              v = time.ctime(time.mktime(v))
           d[k]=v
