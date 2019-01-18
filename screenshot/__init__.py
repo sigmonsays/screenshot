@@ -15,6 +15,22 @@ from screenshot.clipboard import MakeClipboard
 from screenshot.upload import * # pylint: disable=wildcard-import
 from screenshot.tinyurl import MakeTinyUrl
 
+def isset(v):
+    """
+    type aware is set
+    """
+    t = type(v)
+    if t == list and len(v) == 0:
+       return False
+    # Default
+    if v == None:
+        return False
+    if v:
+        return True
+    return False
+
+
+
 class ShotMetadata(object):
    """
    Holds metadata about the screenshot
@@ -37,7 +53,7 @@ class ShotMetadata(object):
       for k, v in i:
           if k == 'self' or k.startswith('_') or k in skip:
             continue
-          if v == None:
+          if isset(v) == False:
             continue
           if k == 'now':
              v = time.ctime(time.mktime(v))
