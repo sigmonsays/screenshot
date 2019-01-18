@@ -1,6 +1,7 @@
 """Screen shot program"""
 import logging
 import os
+import json
 import platform
 import random
 import string
@@ -15,7 +16,9 @@ from screenshot.upload import * # pylint: disable=wildcard-import
 from screenshot.tinyurl import MakeTinyUrl
 
 class ShotMetadata(object):
-   """I have no idea what this is"""
+   """
+   Holds metadata about the screenshot
+   """
    def __init__(self):
       self.screenshot_dir = None
       self.shortname = "screenshot"
@@ -23,6 +26,21 @@ class ShotMetadata(object):
       self.now = time.localtime()
       self.timestamp = time.strftime("%F-%T").replace(":", "-")
       self.url = None
+      self.urls = []
+      self.clipboard_url = None
+      self.short_url = None
+
+   def to_dict(self):
+      i = self.__dict__.iteritems()
+      d = {}
+      skip = set('urls')
+      for k, v in i:
+          if k == 'self' or k.startswith('_') or k in skip:
+            continue
+          if k == 'now':
+             v = time.ctime(time.mktime(v))
+          d[k]=v
+      return d
 
    def __str__(self):
       ret = "<%s " % (self.__class__.__name__)
@@ -30,8 +48,6 @@ class ShotMetadata(object):
       ret += ">"
       return ret
 
-   def to_dict(self):
-      return self.__dict__
 
    def get_filename(self):
       basename = "%s-%s.jpg" % (self.shortname, self.timestamp)
@@ -39,6 +55,14 @@ class ShotMetadata(object):
 
    def get_url(self):
       return self.url
+
+   def set_url(self, url):
+      self.url = url
+
+   def add_url(self, url, weight=0, set_url=False):
+      self.urls.append(url)
+      if set_url:
+          self.set_url(url)
 
 class Screenshot(object):
    """Does sweet stuff"""
@@ -131,8 +155,9 @@ class Screenshot(object):
          ) + ".jpg",
       }
       tmpl.update(meta.to_dict())
-      egress_url = self.opts.egress_url % tmpl
-      meta.url = egress_url
+      if self.opts.egress_url:
+          egress_url = self.opts.egress_url % tmpl
+          meta.add_url(egress_url, set_url=True)
       delete_original = True
 
       if self.opts.filename == None:
@@ -178,9 +203,11 @@ class Screenshot(object):
                )
 
       clipboard_url = self.clipboard.get_url()
+      meta.clipboard_url = clipboard_url
       self.log.info("clipboard url %s", clipboard_url)
 
       short_url = self.tiny.make_url(clipboard_url)
+      meta.short_url = short_url
       if short_url:
          self.clipboard.add_url(short_url)
 
@@ -208,6 +235,8 @@ class Screenshot(object):
       if delete_original:
           self.log.debug("deleting %s", filename)
           os.unlink(filename)
+
+      return meta
 
    def warm_cache_url(self, url):
       """Warm up a configured cache by fetching the url"""

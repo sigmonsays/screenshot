@@ -6,7 +6,7 @@ DEFAULT_CONFIG = """
 log_level = info
 
 # Override what FQDN is use (for a reverse proxy if setup)
-egress_url = http://example.net/%%s
+egress_url = http://example.net/%%(key)s
 
 index_file = %(HOME)s/.screenshots.index
 directory = /tmp/screenshots

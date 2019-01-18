@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 import logging
 from optparse import OptionParser
+import json
 
 from screenshot import Screenshot
 from screenshot import config
@@ -56,7 +57,10 @@ class Application:
        #opts.uploaders = options.uploaders
 
         
-       app.take_screenshot(shortname, summary)
+       meta = app.take_screenshot(shortname, summary)
+
+       d  = meta.to_dict()
+       print json.dumps(d, indent=4, sort_keys=True)
 
 def main():
     Application().main()
